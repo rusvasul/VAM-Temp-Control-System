@@ -2,26 +2,15 @@ import api from './api';
 
 // Tank Data
 // GET /tanks
-// Response: { tanks: Array<{ id: number, name: string, temperature: number, status: string, mode: string, valveStatus: string }> }
-export const getTanks = () => {
-  // Get the number of tanks from localStorage or use default of 9
-  const settings = JSON.parse(localStorage.getItem('tankSettings') || '{"numberOfTanks": 9}');
-  const numberOfTanks = settings.numberOfTanks;
-
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        tanks: Array.from({ length: numberOfTanks }, (_, i) => ({
-          id: i + 1,
-          name: `Tank ${i + 1}`,
-          temperature: 65 + Math.random() * 10,
-          status: 'Active',
-          mode: 'Cooling',
-          valveStatus: 'Open'
-        }))
-      });
-    }, 500);
-  });
+// Response: Array<{ id: number, name: string, temperature: number, status: string, mode: string, valveStatus: string }>
+export const getTanks = async () => {
+  try {
+    const response = await api.get('/tanks');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching tanks:', error);
+    throw error;
+  }
 };
 
 // System Status

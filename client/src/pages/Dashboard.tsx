@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { TankCard } from "@/components/TankCard"
 import { SystemStatus } from "@/components/SystemStatus"
 import { getTanks, getSystemStatus } from "@/api/tanks"
+import { useToast } from "@/hooks/useToast"
 
 interface Tank {
   id: number
@@ -10,10 +11,6 @@ interface Tank {
   status: string
   mode: string
   valveStatus: string
-}
-
-interface TanksResponse {
-  tanks: Tank[]
 }
 
 interface SystemStatusType {
@@ -29,18 +26,36 @@ export function Dashboard() {
     heaterStatus: '',
     systemMode: ''
   })
+  const [isLoading, setIsLoading] = useState(true)
+  const { toast } = useToast()
 
   useEffect(() => {
     const fetchData = async () => {
-      const [tanksData, statusData] = await Promise.all([
-        getTanks(),
-        getSystemStatus()
-      ]) as [TanksResponse, SystemStatusType]
-      setTanks(tanksData.tanks)
-      setSystemStatus(statusData)
+      try {
+        setIsLoading(true)
+        const [tanksData, statusData] = await Promise.all([
+          getTanks(),
+          getSystemStatus()
+        ])
+        setTanks(tanksData)
+        setSystemStatus(statusData)
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error)
+        toast({
+          title: "Error",
+          description: "Failed to fetch dashboard data. Please try again.",
+          variant: "destructive",
+        })
+      } finally {
+        setIsLoading(false)
+      }
     }
     fetchData()
-  }, [])
+  }, [toast])
+
+  if (isLoading) {
+    return <div className="flex justify-center items-center h-screen">Loading...</div>
+  }
 
   return (
     <div className="space-y-4 p-8 pt-6">
