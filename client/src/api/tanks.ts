@@ -1,4 +1,5 @@
 import api from './api';
+import { AxiosError } from 'axios';
 
 export interface Tank {
   id: string;
@@ -26,9 +27,10 @@ export const getTanks = async (): Promise<Tank[]> => {
     console.log('Tanks response:', response.data);
     return response.data;
   } catch (error) {
-    console.error('Error fetching tanks:', error);
-    if (error.response) {
-      console.error('Error response:', error.response.data);
+    const axiosError = error as AxiosError;
+    console.error('Error fetching tanks:', axiosError);
+    if (axiosError.response) {
+      console.error('Error response:', axiosError.response.data);
     }
     throw error;
   }
@@ -41,9 +43,10 @@ export const updateTank = async (id: string, updates: Partial<Tank>): Promise<Ta
     const response = await api.put(`/tanks/${id}`, updates);
     return response.data;
   } catch (error) {
-    console.error('Error updating tank:', error);
-    if (error.response) {
-      console.error('Error response:', error.response.data);
+    const axiosError = error as AxiosError;
+    console.error('Error updating tank:', axiosError);
+    if (axiosError.response) {
+      console.error('Error response:', axiosError.response.data);
     }
     throw error;
   }
@@ -92,7 +95,8 @@ export const getDetailedTankData = async (tankId: string): Promise<Tank> => {
     const response = await api.get(`/tanks/${tankId}`);
     return response.data;
   } catch (error) {
-    console.error('Error fetching detailed tank data:', error);
+    const axiosError = error as AxiosError;
+    console.error('Error fetching detailed tank data:', axiosError);
     throw error;
   }
 };

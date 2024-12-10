@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Tank = require('../models/Tank');
 const debug = require('debug')('app:tanks');
+const mongoose = require('mongoose');
 
 // GET /api/tanks
 router.get('/', async (req, res) => {
@@ -36,10 +37,17 @@ router.put('/:id', async (req, res) => {
   debug(`PUT /api/tanks/${id} request received with data:`, updates);
 
   try {
-    const tank = await Tank.findById(id);
+    let tank;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      tank = await Tank.findById(id);
+    } else {
+      // Look up tank directly by name
+      debug(`Looking for tank with name: ${id}`);
+      tank = await Tank.findOne({ name: id });
+    }
     
     if (!tank) {
-      debug(`Tank not found with id: ${id}`);
+      debug(`Tank not found with id/name: ${id}`);
       return res.status(404).json({ error: 'Tank not found' });
     }
 
@@ -78,10 +86,17 @@ router.get('/:id', async (req, res) => {
   debug(`GET /api/tanks/${id} request received`);
   
   try {
-    const tank = await Tank.findById(id).lean();
+    let tank;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      tank = await Tank.findById(id).lean();
+    } else {
+      // Look up tank directly by name
+      debug(`Looking for tank with name: ${id}`);
+      tank = await Tank.findOne({ name: id }).lean();
+    }
     
     if (!tank) {
-      debug(`Tank not found with id: ${id}`);
+      debug(`Tank not found with id/name: ${id}`);
       return res.status(404).json({ error: 'Tank not found' });
     }
     
@@ -105,7 +120,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // GET /api/tanks/:id/temperature-stream
-router.get('/:id/temperature-stream', (req, res) => {
+router.get('/:id/temperature-stream', async (req, res) => {
   const { id } = req.params;
   debug(`SSE connection established for tank ${id}`);
   
@@ -117,7 +132,15 @@ router.get('/:id/temperature-stream', (req, res) => {
 
   const sendTemperature = async () => {
     try {
-      const tank = await Tank.findById(id).lean();
+      let tank;
+      if (mongoose.Types.ObjectId.isValid(id)) {
+        tank = await Tank.findById(id).lean();
+      } else {
+        // Look up tank directly by name
+        debug(`Looking for tank with name: ${id}`);
+        tank = await Tank.findOne({ name: id }).lean();
+      }
+      
       if (tank) {
         const data = JSON.stringify({ temperature: tank.temperature });
         debug(`Sending temperature update for tank ${id}:`, data);
@@ -130,7 +153,7 @@ router.get('/:id/temperature-stream', (req, res) => {
   };
 
   // Send initial temperature
-  sendTemperature();
+  await sendTemperature();
 
   // Simulate temperature updates every 5 seconds
   const intervalId = setInterval(sendTemperature, 5000);
