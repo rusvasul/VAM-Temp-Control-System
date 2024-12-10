@@ -14,7 +14,7 @@ export interface TemperatureHistory {
   history: Array<{
     timestamp: string;
     temperature: number;
-    tankId: number;
+    tankId: string;
   }>;
 }
 
@@ -83,7 +83,7 @@ export const getTemperatureHistory = async (): Promise<TemperatureHistory> => {
       history: Array.from({ length: 24 }, (_, i) => ({
         timestamp: new Date(Date.now() - i * 3600000).toISOString(),
         temperature: 65 + Math.random() * 10,
-        tankId: 1
+        tankId: '1'
       }))
     };
   }
@@ -97,6 +97,37 @@ export const getDetailedTankData = async (tankId: string): Promise<Tank> => {
   } catch (error) {
     const axiosError = error as AxiosError;
     console.error('Error fetching detailed tank data:', axiosError);
+    throw error;
+  }
+};
+
+// Create Tank
+// POST /tanks
+export const createTank = async (tankData: Partial<Tank>): Promise<Tank> => {
+  try {
+    const response = await api.post('/tanks', tankData);
+    return response.data;
+  } catch (error) {
+    const axiosError = error as AxiosError;
+    console.error('Error creating tank:', axiosError);
+    if (axiosError.response) {
+      console.error('Error response:', axiosError.response.data);
+    }
+    throw error;
+  }
+};
+
+// Delete Tank
+// DELETE /tanks/:id
+export const deleteTank = async (id: string): Promise<void> => {
+  try {
+    await api.delete(`/tanks/${id}`);
+  } catch (error) {
+    const axiosError = error as AxiosError;
+    console.error('Error deleting tank:', axiosError);
+    if (axiosError.response) {
+      console.error('Error response:', axiosError.response.data);
+    }
     throw error;
   }
 };

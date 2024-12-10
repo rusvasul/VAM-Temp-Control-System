@@ -165,4 +165,68 @@ router.get('/:id/temperature-stream', async (req, res) => {
   });
 });
 
+// POST /api/tanks
+router.post('/', async (req, res) => {
+  const tankData = req.body;
+  debug('POST /api/tanks request received with data:', tankData);
+
+  try {
+    const tank = new Tank({
+      name: tankData.name,
+      temperature: tankData.temperature || 68, // Default temperature
+      status: tankData.status || 'Inactive',
+      mode: tankData.mode || 'Idle',
+      valveStatus: tankData.valveStatus || 'Closed'
+    });
+
+    await tank.save();
+    
+    // Transform MongoDB _id to id for client compatibility
+    const transformedTank = {
+      id: tank._id.toString(),
+      name: tank.name,
+      temperature: tank.temperature,
+      status: tank.status,
+      mode: tank.mode,
+      valveStatus: tank.valveStatus
+    };
+    
+    debug('Tank created successfully:', transformedTank);
+    res.status(201).json(transformedTank);
+  } catch (error) {
+    debug(`Error creating tank: ${error.message}`);
+    console.error('Error creating tank:', error);
+    res.status(500).json({ error: 'Failed to create tank', message: error.message });
+  }
+});
+
+// DELETE /api/tanks/:id
+router.delete('/:id', async (req, res) => {
+  const { id } = req.params;
+  debug(`DELETE /api/tanks/${id} request received`);
+
+  try {
+    let tank;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      tank = await Tank.findByIdAndDelete(id);
+    } else {
+      // Look up tank directly by name
+      debug(`Looking for tank with name: ${id}`);
+      tank = await Tank.findOneAndDelete({ name: id });
+    }
+    
+    if (!tank) {
+      debug(`Tank not found with id/name: ${id}`);
+      return res.status(404).json({ error: 'Tank not found' });
+    }
+    
+    debug('Tank deleted successfully');
+    res.status(204).send();
+  } catch (error) {
+    debug(`Error deleting tank: ${error.message}`);
+    console.error('Error deleting tank:', error);
+    res.status(500).json({ error: 'Failed to delete tank', message: error.message });
+  }
+});
+
 module.exports = router;

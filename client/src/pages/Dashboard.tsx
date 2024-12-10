@@ -1,33 +1,37 @@
 import { useEffect, useState } from "react"
 import { TankCard } from "@/components/TankCard"
 import { SystemStatus } from "@/components/SystemStatus"
-import { getTanks, getSystemStatus } from "@/api/tanks"
+import { getTanks, getSystemStatus, Tank as TankType, createTank } from "@/api/tanks"
 import { useToast } from "@/hooks/useToast"
-
-interface Tank {
-  id: number
-  name: string
-  temperature: number
-  status: string
-  mode: string
-  valveStatus: string
-}
-
-interface SystemStatusType {
-  chillerStatus: string
-  heaterStatus: string
-  systemMode: string
-}
+import { TankDialog } from "@/components/TankDialog"
+import { Button } from "@/components/ui/button"
+import { PlusCircle } from "lucide-react"
 
 export function Dashboard() {
-  const [tanks, setTanks] = useState<Tank[]>([])
-  const [systemStatus, setSystemStatus] = useState<SystemStatusType>({
+  const [tanks, setTanks] = useState<TankType[]>([])
+  const [systemStatus, setSystemStatus] = useState({
     chillerStatus: '',
     heaterStatus: '',
     systemMode: ''
   })
   const [isLoading, setIsLoading] = useState(true)
+  const [selectedTank, setSelectedTank] = useState<TankType | null>(null)
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
   const { toast } = useToast()
+
+  const fetchTanks = async () => {
+    try {
+      const tanksData = await getTanks()
+      setTanks(tanksData)
+    } catch (error) {
+      console.error('Error fetching tanks:', error)
+      toast({
+        title: "Error",
+        description: "Failed to fetch tanks data. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
 
   useEffect(() => {
     const fetchData = async () => {
@@ -53,21 +57,77 @@ export function Dashboard() {
     fetchData()
   }, [toast])
 
+  const handleTankClick = (tank: TankType) => {
+    setSelectedTank(tank)
+    setIsDialogOpen(true)
+  }
+
+  const handleDialogClose = () => {
+    setIsDialogOpen(false)
+    setSelectedTank(null)
+  }
+
+  const handleTankUpdate = () => {
+    fetchTanks()
+  }
+
+  const handleAddTank = async () => {
+    try {
+      const newTankNumber = tanks.length + 1
+      const newTank = await createTank({
+        name: `fv${newTankNumber.toString().padStart(2, '0')}`,
+        temperature: 68,
+        status: 'Inactive',
+        mode: 'Idle',
+        valveStatus: 'Closed'
+      })
+      await fetchTanks()
+      toast({
+        title: "Success",
+        description: "Tank added successfully",
+      })
+    } catch (error) {
+      console.error('Error adding tank:', error)
+      toast({
+        title: "Error",
+        description: "Failed to add tank. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
   if (isLoading) {
     return <div className="flex justify-center items-center h-screen">Loading...</div>
   }
 
   return (
-    <div className="space-y-4 p-8 pt-6">
-      <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+    <div className="container mx-auto p-4">
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">Dashboard</h1>
+        <Button onClick={handleAddTank}>
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Add Tank
+        </Button>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {tanks.map((tank) => (
-          <TankCard key={tank.id} {...tank} />
+          <TankCard
+            key={tank.id}
+            {...tank}
+            onClick={() => handleTankClick(tank)}
+          />
         ))}
       </div>
-      <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-        <SystemStatus {...systemStatus} />
-      </div>
+      {selectedTank && (
+        <TankDialog
+          isOpen={isDialogOpen}
+          onClose={handleDialogClose}
+          tank={selectedTank}
+          onUpdate={handleTankUpdate}
+          onDelete={handleTankUpdate}
+        />
+      )}
+      <SystemStatus {...systemStatus} />
     </div>
   )
 }

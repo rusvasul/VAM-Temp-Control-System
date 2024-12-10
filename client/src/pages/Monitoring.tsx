@@ -5,6 +5,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { getTanks, getDetailedTankData, getTemperatureHistory } from "@/api/tanks"
 import { ThermometerIcon, AlertCircle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { TankDialog } from "@/components/TankDialog"
 import type { Tank } from "@/api/tanks"
 
 interface TemperatureData {
@@ -14,7 +15,8 @@ interface TemperatureData {
 
 export function Monitoring() {
   const [tanks, setTanks] = useState<Tank[]>([])
-  const [selectedTank, setSelectedTank] = useState<string>("")
+  const [selectedTank, setSelectedTank] = useState<Tank | null>(null)
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [detailedTankData, setDetailedTankData] = useState<Tank | null>(null)
   const [tempHistory, setTempHistory] = useState<TemperatureData[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -29,7 +31,7 @@ export function Monitoring() {
         const tanksData = await getTanks()
         setTanks(tanksData)
         if (tanksData.length > 0) {
-          setSelectedTank(tanksData[0].id)
+          setSelectedTank(tanksData[0])
         }
       } catch (error) {
         console.error('Error fetching tanks:', error)
@@ -48,16 +50,14 @@ export function Monitoring() {
     const fetchDetailedData = async () => {
       try {
         setError(null)
-        const [detailedData, historyData] = await Promise.all([
-          getDetailedTankData(selectedTank),
-          getTemperatureHistory()
-        ])
+        const detailedData = await getDetailedTankData(selectedTank.id)
         setDetailedTankData(detailedData)
+        const historyData = await getTemperatureHistory(selectedTank.id)
         setTempHistory(historyData.history)
 
         // Set up SSE for real-time temperature updates
-        const eventSource = new EventSource(`http://localhost:3000/api/tanks/${selectedTank}/temperature-stream`)
-        
+        const eventSource = new EventSource(`http://localhost:3000/api/tanks/${selectedTank.id}/temperature-stream`)
+
         eventSource.onmessage = (event) => {
           try {
             const data = JSON.parse(event.data)
@@ -66,7 +66,7 @@ export function Monitoring() {
               temperature: data.temperature
             } : null)
             setTempHistory(prevHistory => [
-              ...prevHistory.slice(-23),
+              ...prevHistory,
               { timestamp: new Date().toISOString(), temperature: data.temperature }
             ])
           } catch (error) {
@@ -90,6 +90,33 @@ export function Monitoring() {
 
     fetchDetailedData()
   }, [selectedTank])
+
+  const handleTankClick = (tank: Tank) => {
+    setSelectedTank(tank)
+    setIsDialogOpen(true)
+  }
+
+  const handleDialogClose = () => {
+    setIsDialogOpen(false)
+    setSelectedTank(null)
+  }
+
+  const handleTankUpdate = async () => {
+    // Refresh the tanks data
+    try {
+      const tanksData = await getTanks()
+      setTanks(tanksData)
+      if (selectedTank) {
+        const updatedTankData = tanksData.find(tank => tank.id === selectedTank.id)
+        if (updatedTankData) {
+          setSelectedTank(updatedTankData)
+        }
+      }
+    } catch (error) {
+      console.error('Error updating tank data:', error)
+      setError('Failed to update tank data')
+    }
+  }
 
   if (isLoading) {
     return <div className="flex justify-center items-center h-screen">Loading...</div>
@@ -119,7 +146,10 @@ export function Monitoring() {
         </Alert>
       )}
 
-      <Tabs value={selectedTank} onValueChange={setSelectedTank}>
+      <Tabs value={selectedTank ? selectedTank.id : ""} onValueChange={(id) => {
+        const tank = tanks.find(t => t.id === id)
+        if (tank) setSelectedTank(tank)
+      }}>
         <TabsList className="grid grid-cols-3 lg:grid-cols-9">
           {tanks.map((tank) => (
             <TabsTrigger key={tank.id} value={tank.id}>
@@ -128,7 +158,7 @@ export function Monitoring() {
           ))}
         </TabsList>
         {detailedTankData && (
-          <TabsContent value={selectedTank}>
+          <TabsContent value={selectedTank ? selectedTank.id : ""}>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
               <Card className="lg:col-span-4">
                 <CardHeader>
@@ -191,6 +221,14 @@ export function Monitoring() {
           </TabsContent>
         )}
       </Tabs>
+      {selectedTank && (
+        <TankDialog
+          isOpen={isDialogOpen}
+          onClose={handleDialogClose}
+          tank={selectedTank}
+          onUpdate={handleTankUpdate}
+        />
+      )}
     </div>
   )
 }

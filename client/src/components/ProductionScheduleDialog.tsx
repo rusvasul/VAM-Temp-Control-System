@@ -10,7 +10,7 @@ interface ProductionScheduleDialogProps {
   isOpen: boolean
   onClose: () => void
   onSave: (schedule: {
-    tankId: number;
+    tankId: string;
     beerStyle: string;
     startDate: string;
     endDate: string;
@@ -21,7 +21,7 @@ interface ProductionScheduleDialogProps {
 export function ProductionScheduleDialog({ isOpen, onClose, onSave, numberOfTanks }: ProductionScheduleDialogProps) {
   const { settings } = useManagerSettings()
   const [schedule, setSchedule] = useState({
-    tankId: 1,
+    tankId: "1",
     beerStyle: settings.beerStyles[0]?.name || '',
     startDate: new Date().toISOString().split('T')[0],
     endDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
@@ -42,8 +42,8 @@ export function ProductionScheduleDialog({ isOpen, onClose, onSave, numberOfTank
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="tank" className="text-right">Tank</Label>
             <Select
-              value={schedule.tankId.toString()}
-              onValueChange={(value) => setSchedule({ ...schedule, tankId: parseInt(value) })}
+              value={schedule.tankId}
+              onValueChange={(value) => setSchedule({ ...schedule, tankId: value })}
             >
               <SelectTrigger className="col-span-3">
                 <SelectValue placeholder="Select tank" />

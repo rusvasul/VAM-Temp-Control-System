@@ -8,15 +8,16 @@ import { useSettings } from "@/contexts/SettingsContext"
 import { cn } from "@/lib/utils"
 
 interface TankCardProps {
-  id: number
-  name: string
-  temperature: number
-  status: string
-  mode: string
-  valveStatus: string
+  id: string;
+  name: string;
+  temperature: number;
+  status: string;
+  mode: string;
+  valveStatus: string;
+  onClick: () => void;
 }
 
-export function TankCard({ id, name, temperature, status, mode, valveStatus }: TankCardProps) {
+export function TankCard({ id, name, temperature, status, mode, valveStatus, onClick }: TankCardProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const settings = useSettings();
   const [progressValue, setProgressValue] = useState(0)
@@ -38,7 +39,7 @@ export function TankCard({ id, name, temperature, status, mode, valveStatus }: T
     <>
       <Card
         className="hover:shadow-lg transition-shadow cursor-pointer"
-        onClick={() => setIsDialogOpen(true)}
+        onClick={onClick}
       >
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">{name}</CardTitle>
