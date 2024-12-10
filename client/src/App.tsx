@@ -31,8 +31,8 @@ function App() {
         <SettingsProvider>
           <ManagerSettingsProvider>
             <Router>
+              {console.log("Current route:", window.location.pathname)}
               <Routes>
-                {(() => { console.log("Router rendering"); return null; })()}
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route

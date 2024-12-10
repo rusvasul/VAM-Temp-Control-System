@@ -26,11 +26,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const userIsAdmin = localStorage.getItem("isAdmin") === "true";
-    setIsAuthenticated(!!token);
-    setIsAdmin(userIsAdmin);
-    setIsLoading(false);
+    console.log("AuthContext: Checking authentication");
+    const checkAuth = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const userIsAdmin = localStorage.getItem("isAdmin") === "true";
+        setIsAuthenticated(!!token);
+        setIsAdmin(userIsAdmin);
+        console.log("AuthContext: Authentication check result", isAuthenticated);
+      } catch (error) {
+        console.error("AuthContext: Error checking authentication", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    checkAuth();
   }, []);
 
   const login = async (email: string, password: string) => {
@@ -41,10 +51,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem("isAdmin", String(response.data.isAdmin || false));
         setIsAuthenticated(true);
         setIsAdmin(response.data.isAdmin || false);
+        console.log("AuthContext: User logged in", { email, isAdmin: response.data.isAdmin });
       } else {
         throw new Error(response.data?.message || "Login failed");
       }
     } catch (error) {
+      console.error("AuthContext: Error during login", error);
       localStorage.removeItem("token");
       localStorage.removeItem("isAdmin");
       setIsAuthenticated(false);
@@ -61,10 +73,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem("isAdmin", String(response.data.isAdmin || false));
         setIsAuthenticated(true);
         setIsAdmin(response.data.isAdmin || false);
+        console.log("AuthContext: User registered", { email, isAdmin: response.data.isAdmin });
       } else {
         throw new Error(response.data?.message || "Registration failed");
       }
     } catch (error) {
+      console.error("AuthContext: Error during registration", error);
       setIsAuthenticated(false);
       setIsAdmin(false);
       throw error;
@@ -72,6 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
+    console.log("AuthContext: Logging out");
     localStorage.removeItem("token");
     localStorage.removeItem("isAdmin");
     setIsAuthenticated(false);

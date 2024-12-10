@@ -5,6 +5,7 @@ import { useState, useEffect } from "react"
 import { TankDialog } from "./TankDialog"
 import { Progress } from "@/components/ui/progress"
 import { useSettings } from "@/contexts/SettingsContext"
+import { cn } from "@/lib/utils"
 
 interface TankCardProps {
   id: number
@@ -26,12 +27,6 @@ export function TankCard({ id, name, temperature, status, mode, valveStatus }: T
     const value = ((temperature - settings.minTemp) / range) * 100;
     setProgressValue(Math.min(Math.max(value, 0), 100));
   }, [temperature, settings.minTemp, settings.maxTemp]);
-
-  // Calculate the gradient color based on temperature
-  const getGradientColor = () => {
-    const hue = ((settings.maxTemp - temperature) / (settings.maxTemp - settings.minTemp)) * 240;
-    return `hsl(${hue}, 80%, 50%)`;
-  };
 
   const timeInService = "14:30:00"; // Mock time in service
   const setPoint = settings.maxTemp - ((settings.maxTemp - settings.minTemp) / 2); // Mock setpoint
@@ -61,21 +56,26 @@ export function TankCard({ id, name, temperature, status, mode, valveStatus }: T
             </div>
 
             <div className="relative pt-8 pb-4">
-              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
-                <div className="text-sm font-medium">Range</div>
+              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center z-10">
+                <div className="text-sm font-medium text-foreground">{temperature}°F</div>
                 <div className="text-xs text-muted-foreground">
                   {settings.minTemp}°F - {settings.maxTemp}°F
                 </div>
               </div>
               <div className="relative">
-                <Progress
-                  value={progressValue}
-                  className="h-4 w-full"
+                <div 
+                  className="h-4 w-full rounded-full overflow-hidden"
                   style={{
-                    background: 'linear-gradient(to right, #3b82f6, #ef4444)',
-                    clipPath: `polygon(0 0, ${progressValue}% 0, ${progressValue}% 100%, 0 100%)`
+                    background: 'linear-gradient(to right, #3b82f6 0%, #60a5fa 25%, #f59e0b 50%, #ef4444 75%, #dc2626 100%)'
                   }}
-                />
+                >
+                  <div 
+                    className="absolute top-0 right-0 h-full bg-secondary transition-all duration-300"
+                    style={{
+                      width: `${100 - progressValue}%`
+                    }}
+                  />
+                </div>
                 <div
                   className="absolute top-0 h-full w-1 bg-white"
                   style={{

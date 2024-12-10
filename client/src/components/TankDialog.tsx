@@ -4,6 +4,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useState } from "react"
+import { updateTank } from "@/api/tanks"
+import { useToast } from "@/hooks/useToast"
 
 interface TankDialogProps {
   isOpen: boolean
@@ -23,11 +25,34 @@ interface TankDialogProps {
 
 export function TankDialog({ isOpen, onClose, tank }: TankDialogProps) {
   const [localTank, setLocalTank] = useState(tank)
+  const [isSaving, setIsSaving] = useState(false)
+  const { toast } = useToast()
 
-  const handleSave = () => {
-    // Here you would typically make an API call to save the changes
-    console.log('Saving tank changes:', localTank)
-    onClose()
+  const handleSave = async () => {
+    try {
+      setIsSaving(true)
+      await updateTank(tank.id.toString(), {
+        name: localTank.name,
+        status: localTank.status,
+        mode: localTank.mode,
+        valveStatus: localTank.valveStatus,
+        setPoint: localTank.setPoint
+      })
+      toast({
+        title: "Success",
+        description: "Tank updated successfully",
+      })
+      onClose()
+    } catch (error) {
+      console.error('Error updating tank:', error)
+      toast({
+        title: "Error",
+        description: "Failed to update tank. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   return (
@@ -105,7 +130,9 @@ export function TankDialog({ isOpen, onClose, tank }: TankDialogProps) {
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={handleSave}>Save changes</Button>
+          <Button onClick={handleSave} disabled={isSaving}>
+            {isSaving ? "Saving..." : "Save changes"}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

@@ -9,5 +9,9 @@
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "debug": "^4.4.0",
+    "jsonwebtoken": "^9.0.2"
   }
 }

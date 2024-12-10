@@ -1,19 +1,18 @@
 const mongoose = require('mongoose');
-const { Tank } = require('../models/init');
+const Tank = require('../models/Tank');
 require('dotenv').config();
 
 const seedTanks = async () => {
   try {
-    await mongoose.connect(process.env.DATABASE_URL, { family: 4 });
+    await mongoose.connect(process.env.MONGODB_URI);
     console.log('Connected to database');
 
-    // Clear existing tanks
     await Tank.deleteMany({});
+    console.log('Cleared existing tanks');
 
-    // Create sample tanks
     const tanks = [
-      { name: 'Tank 1', temperature: 68, status: 'Active', mode: 'Cooling', valveStatus: 'Open' },
-      { name: 'Tank 2', temperature: 72, status: 'Active', mode: 'Heating', valveStatus: 'Closed' },
+      { id: 1, name: 'Tank 1', temperature: 68, status: 'Active', mode: 'Cooling', valveStatus: 'Open' },
+      { id: 2, name: 'Tank 2', temperature: 70, status: 'Active', mode: 'Heating', valveStatus: 'Closed' },
       // Add more tanks as needed
     ];
 
@@ -23,6 +22,7 @@ const seedTanks = async () => {
     console.error('Error seeding tanks:', error);
   } finally {
     await mongoose.connection.close();
+    console.log('Database connection closed');
   }
 };
 

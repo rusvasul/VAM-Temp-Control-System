@@ -14,25 +14,20 @@ import {
 } from "@/components/ui/card"
 import { useToast } from "@/hooks/useToast"
 import { LogIn, Eye, EyeOff } from "lucide-react"
-import { login } from "@/api/auth"
-
-type LoginForm = {
-  email: string
-  password: string
-}
+import { useAuth } from '@/contexts/AuthContext'
 
 export function Login() {
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const { toast } = useToast()
   const navigate = useNavigate()
-  const { register, handleSubmit } = useForm<LoginForm>()
+  const { register, handleSubmit, formState: { errors } } = useForm()
+  const { login } = useAuth()
 
-  const onSubmit = async (data: LoginForm) => {
+  const onSubmit = async (data) => {
     try {
       setLoading(true)
-      let response = await login(data.email, data.password);
-      localStorage.setItem('token', response.data.token);
+      await login(data.email, data.password)
       toast({
         title: "Success",
         description: "Logged in successfully",
@@ -42,7 +37,7 @@ export function Login() {
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.response?.data?.error,
+        description: error.message || "Login failed",
       })
     } finally {
       setLoading(false)
@@ -69,8 +64,9 @@ export function Login() {
                 type="email"
                 placeholder="Enter your email"
                 autoComplete="email"
-                {...register("email", { required: true })}
+                {...register("email", { required: "Email is required" })}
               />
+              {errors.email && <p className="text-red-500 text-xs italic">{errors.email.message}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
@@ -80,7 +76,7 @@ export function Login() {
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
                   autoComplete="current-password"
-                  {...register("password", { required: true })}
+                  {...register("password", { required: "Password is required" })}
                 />
                 <Button
                   type="button"
@@ -96,6 +92,7 @@ export function Login() {
                   )}
                 </Button>
               </div>
+              {errors.password && <p className="text-red-500 text-xs italic">{errors.password.message}</p>}
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? (

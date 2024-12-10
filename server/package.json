@@ -6,7 +6,8 @@
   "scripts": {
     "check-env": "node scripts/check-environment.js",
     "prestart": "npm run check-env",
-    "start": "pm2 start server.js --name vam-tank-control",
+    "start": "cross-env DEBUG=app:* node server.js",
+    "start:prod": "cross-env DEBUG=app:* pm2 start server.js --name vam-tank-control",
     "dev": "nodemon server.js",
     "seed": "node scripts/seedTanks.js"
   },
@@ -14,14 +15,17 @@
     "bcrypt": "^5.1.1",
     "connect-mongo": "^5.1.0",
     "cors": "^2.8.5",
+    "debug": "^4.4.0",
     "dotenv": "^16.4.1",
     "express": "^4.18.2",
     "express-session": "^1.18.0",
+    "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.1.1",
     "pino": "^8.21.0",
     "pino-pretty": "^10.3.1"
   },
   "devDependencies": {
+    "cross-env": "^7.0.3",
     "nodemon": "^3.0.3"
   }
 }

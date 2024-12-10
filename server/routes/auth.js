@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
 const User = require('../models/User');
+const jwt = require('jsonwebtoken');
 const logger = require('../utils/log');
 
 // Log route initialization
@@ -11,7 +12,7 @@ logger.info('Auth routes initialized');
 router.post('/register', async (req, res) => {
   try {
     const { email, password } = req.body;
-    
+
     // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -35,41 +36,35 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
-
-    // Find user
     const user = await User.findOne({ email });
     if (!user) {
       logger.warn(`Login attempt with non-existent email: ${email}`);
-      return res.status(401).json({ error: 'Invalid credentials' });
+      return res.status(400).json({ message: 'Invalid credentials' });
     }
-
-    // Check password
-    const isValidPassword = await bcrypt.compare(password, user.password);
-    if (!isValidPassword) {
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
       logger.warn(`Failed login attempt for user: ${email}`);
-      return res.status(401).json({ error: 'Invalid credentials' });
+      return res.status(400).json({ message: 'Invalid credentials' });
     }
-
-    // Set session
-    req.session.userId = user._id;
-    logger.info(`User logged in: ${email}`);
-    res.json({ message: 'Logged in successfully' });
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    res.json({ token, isAdmin: user.isAdmin });
   } catch (error) {
-    logger.error(`Login error: ${error.message}`);
-    res.status(500).json({ error: 'Internal server error' });
+    logger.error('Login error:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
 // Logout route
 router.post('/logout', (req, res) => {
-  req.session.destroy((err) => {
-    if (err) {
-      logger.error(`Logout error: ${err.message}`);
-      return res.status(500).json({ error: 'Error during logout' });
-    }
+  if (req.headers.authorization) {
+    // Assuming the token is in the Authorization header in Bearer format
+    // Here we simply inform the client to delete the token to "log out"
     logger.info('User logged out');
-    res.json({ message: 'Logged out successfully' });
-  });
+    res.json({ message: 'Logged out successfully. Please delete your token.' });
+  } else {
+    logger.info('No token provided, no action taken');
+    res.status(200).json({ message: 'No token to destroy' });
+  }
 });
 
 module.exports = router;
