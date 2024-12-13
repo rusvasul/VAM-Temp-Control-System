@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const SystemStatus = require('../models/SystemStatus');
 const debug = require('debug')('app:systemStatus');
+const SSE = require('express-sse');
+const sse = new SSE();
 
 // GET /api/system-status
 router.get('/', async (req, res) => {
@@ -56,6 +58,10 @@ router.put('/', async (req, res) => {
 
     await systemStatus.save();
     debug('System status updated successfully:', systemStatus);
+
+    // Emit SSE event with updated system status
+    sse.send(systemStatus, 'systemStatusUpdate');
+
     res.json(systemStatus);
   } catch (error) {
     debug('Error updating system status:', error);

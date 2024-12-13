@@ -7,6 +7,8 @@ const MongoStore = require('connect-mongo');
 const cors = require('cors');
 const debug = require('debug')('app:server');
 const connectDB = require('./config/database');
+const SSE = require('express-sse');
+const sse = new SSE();
 
 // Routes
 const basicRoutes = require('./routes/index');
@@ -53,6 +55,10 @@ const initializeServer = async () => {
         }
       })
     );
+
+    // SSE endpoint
+    app.get('/api/sse', sse.init);
+    debug('SSE endpoint initialized');
 
     // Routes
     app.use('/api', basicRoutes);
@@ -110,5 +116,8 @@ const initializeServer = async () => {
     process.exit(1);
   }
 };
+
+// Make SSE instance available globally
+app.set('sse', sse);
 
 initializeServer();

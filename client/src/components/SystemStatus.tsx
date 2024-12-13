@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Separator } from "@/components/ui/separator"
@@ -9,24 +9,64 @@ import { updateSystemStatus } from "@/api/tanks";
 import { useToast } from "@/hooks/useToast";
 
 interface SystemStatusProps {
-  status: SystemStatusType;
+  initialStatus: SystemStatusType;
   onStatusUpdate: (newStatus: SystemStatusType) => void;
 }
 
-export function SystemStatus({ status, onStatusUpdate }: SystemStatusProps) {
+export function SystemStatus({ initialStatus, onStatusUpdate }: SystemStatusProps) {
   const { toast } = useToast();
   const [isUpdating, setIsUpdating] = useState(false);
+  const [status, setStatus] = useState(initialStatus);
+
+  useEffect(() => {
+    console.log('Initializing SSE connection');
+    const eventSource = new EventSource(`${import.meta.env.VITE_API_BASE_URL}/api/sse`);
+
+    eventSource.onmessage = (event) => {
+      try {
+        console.log('Received SSE update:', event.data);
+        const updatedStatus = JSON.parse(event.data);
+        setStatus(updatedStatus);
+        onStatusUpdate(updatedStatus);
+      } catch (error) {
+        console.error('Error processing SSE message:', error);
+        toast({
+          title: "Error",
+          description: "Failed to process system status update",
+          variant: "destructive",
+        });
+      }
+    };
+
+    eventSource.onerror = (error) => {
+      console.error('SSE connection error:', error);
+      toast({
+        title: "Connection Error",
+        description: "Lost connection to server. Attempting to reconnect...",
+        variant: "destructive",
+      });
+      eventSource.close();
+    };
+
+    return () => {
+      console.log('Closing SSE connection');
+      eventSource.close();
+    };
+  }, [onStatusUpdate, toast]);
 
   const handleSystemModeChange = async (newMode: string) => {
     setIsUpdating(true);
     try {
+      console.log('Updating system mode to:', newMode);
       const updatedStatus = await updateSystemStatus({ ...status, systemMode: newMode });
+      setStatus(updatedStatus);
       onStatusUpdate(updatedStatus);
       toast({
         title: "Success",
         description: `System mode updated to ${newMode}`,
       });
     } catch (error) {
+      console.error('Error updating system mode:', error);
       toast({
         title: "Error",
         description: error.message,

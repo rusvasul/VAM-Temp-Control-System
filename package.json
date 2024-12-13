@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "debug": "^4.4.0",
+    "express-sse": "^0.5.3",
     "jsonwebtoken": "^9.0.2"
   }
 }
