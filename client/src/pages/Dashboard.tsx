@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { TankCard } from "@/components/TankCard"
 import { SystemStatus } from "@/components/SystemStatus"
-import { getTanks, getSystemStatus, Tank as TankType, createTank } from "@/api/tanks"
+import { getTanks, getSystemStatus, Tank as TankType, createTank, SystemStatus as SystemStatusType } from "@/api/tanks"
 import { useToast } from "@/hooks/useToast"
 import { TankDialog } from "@/components/TankDialog"
 import { Button } from "@/components/ui/button"
@@ -9,7 +9,7 @@ import { PlusCircle } from "lucide-react"
 
 export function Dashboard() {
   const [tanks, setTanks] = useState<TankType[]>([])
-  const [systemStatus, setSystemStatus] = useState({
+  const [systemStatus, setSystemStatus] = useState<SystemStatusType>({
     chillerStatus: '',
     heaterStatus: '',
     systemMode: ''
@@ -33,16 +33,25 @@ export function Dashboard() {
     }
   }
 
+  const fetchSystemStatus = async () => {
+    try {
+      const statusData = await getSystemStatus()
+      setSystemStatus(statusData)
+    } catch (error) {
+      console.error('Error fetching system status:', error)
+      toast({
+        title: "Error",
+        description: "Failed to fetch system status. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         setIsLoading(true)
-        const [tanksData, statusData] = await Promise.all([
-          getTanks(),
-          getSystemStatus()
-        ])
-        setTanks(tanksData)
-        setSystemStatus(statusData)
+        await Promise.all([fetchTanks(), fetchSystemStatus()])
       } catch (error) {
         console.error('Error fetching dashboard data:', error)
         toast({
@@ -55,6 +64,12 @@ export function Dashboard() {
       }
     }
     fetchData()
+
+    // Set up interval for fetching system status
+    const intervalId = setInterval(fetchSystemStatus, 5000) // Fetch every 5 seconds
+
+    // Clean up interval on component unmount
+    return () => clearInterval(intervalId)
   }, [toast])
 
   const handleTankClick = (tank: TankType) => {
@@ -127,7 +142,7 @@ export function Dashboard() {
           onDelete={handleTankUpdate}
         />
       )}
-      <SystemStatus {...systemStatus} />
+      <SystemStatus status={systemStatus} />
     </div>
   )
 }

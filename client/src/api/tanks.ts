@@ -59,16 +59,20 @@ export interface SystemStatus {
   systemMode: string;
 }
 
-export const getSystemStatus = (): Promise<SystemStatus> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        chillerStatus: 'Running',
-        heaterStatus: 'Standby',
-        systemMode: 'Cooling'
-      });
-    }, 500);
-  });
+export const getSystemStatus = async (): Promise<SystemStatus> => {
+  try {
+    console.log('Fetching system status');
+    const response = await api.get('/system-status');
+    console.log('System status response:', response.data);
+    return response.data;
+  } catch (error) {
+    const axiosError = error as AxiosError;
+    console.error('Error fetching system status:', axiosError);
+    if (axiosError.response) {
+      console.error('Error response:', axiosError.response.data);
+    }
+    throw error;
+  }
 };
 
 // Temperature History

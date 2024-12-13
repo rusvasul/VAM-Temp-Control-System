@@ -1,15 +1,15 @@
+import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Separator } from "@/components/ui/separator"
 import { ThermometerIcon, Power, Droplet } from "lucide-react"
+import { SystemStatus as SystemStatusType } from "@/api/tanks";
 
 interface SystemStatusProps {
-  chillerStatus: string
-  heaterStatus: string
-  systemMode: string
+  status: SystemStatusType;
 }
 
-export function SystemStatus({ chillerStatus, heaterStatus, systemMode }: SystemStatusProps) {
+export function SystemStatus({ status }: SystemStatusProps) {
   return (
     <Card className="col-span-4">
       <CardHeader>
@@ -22,15 +22,15 @@ export function SystemStatus({ chillerStatus, heaterStatus, systemMode }: System
         <div className="flex items-center justify-between">
           <div className="space-y-1">
             <p className="text-sm font-medium">Chiller Status</p>
-            <p className="text-2xl font-bold">{chillerStatus}</p>
+            <p className="text-2xl font-bold">{status.chillerStatus}</p>
           </div>
           <div className="space-y-1">
             <p className="text-sm font-medium">Heater Status</p>
-            <p className="text-2xl font-bold">{heaterStatus}</p>
+            <p className="text-2xl font-bold">{status.heaterStatus}</p>
           </div>
           <div className="space-y-1">
             <p className="text-sm font-medium">System Mode</p>
-            <p className="text-2xl font-bold">{systemMode}</p>
+            <p className="text-2xl font-bold">{status.systemMode}</p>
           </div>
         </div>
         <Separator />
