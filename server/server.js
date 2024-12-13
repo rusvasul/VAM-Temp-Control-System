@@ -12,6 +12,7 @@ const connectDB = require('./config/database');
 const basicRoutes = require('./routes/index');
 const authRoutes = require('./routes/auth');
 const tankRoutes = require('./routes/tanks');
+const systemStatusRoutes = require('./routes/systemStatus');
 
 // Initialize express app
 const app = express();
@@ -57,28 +58,55 @@ const initializeServer = async () => {
     app.use('/api', basicRoutes);
     app.use('/api/auth', authRoutes);
     app.use('/api/tanks', tankRoutes);
+    app.use('/api/system-status', systemStatusRoutes);
     debug('Routes mounted');
 
     // Error handling middleware
     app.use((err, req, res, next) => {
-      console.error('Error:', err);
+      console.error('Error:', err.stack); // Log full error stack trace
+      debug('Error occurred:', err);
       res.status(500).json({
         error: 'Internal server error',
-        message: process.env.NODE_ENV === 'development' ? err.message : undefined
+        message: process.env.NODE_ENV === 'development' ? err.message : undefined,
+        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
       });
     });
 
     // 404 handler
     app.use((req, res) => {
-      res.status(404).json({ error: 'Route not found' });
+      debug('Route not found:', req.originalUrl);
+      res.status(404).json({ 
+        error: 'Route not found',
+        path: req.originalUrl
+      });
     });
 
     // Start server
-    app.listen(port, () => {
+    const server = app.listen(port, () => {
       debug(`Server running at http://localhost:${port}`);
+      console.log(`Server is listening on port ${port}`);
     });
+
+    // Handle server shutdown gracefully
+    process.on('SIGTERM', () => {
+      debug('SIGTERM received. Shutting down gracefully...');
+      server.close(() => {
+        debug('Server closed');
+        process.exit(0);
+      });
+    });
+
+    process.on('SIGINT', () => {
+      debug('SIGINT received. Shutting down gracefully...');
+      server.close(() => {
+        debug('Server closed');
+        process.exit(0);
+      });
+    });
+
   } catch (error) {
-    console.error('Failed to initialize server:', error);
+    console.error('Failed to initialize server:', error.stack);
+    debug('Server initialization failed:', error);
     process.exit(1);
   }
 };
