@@ -75,6 +75,24 @@ export const getSystemStatus = async (): Promise<SystemStatus> => {
   }
 };
 
+// Update System Status
+// PUT /api/system-status
+export const updateSystemStatus = async (updates: Partial<SystemStatus>): Promise<SystemStatus> => {
+  try {
+    console.log('Updating system status with:', updates);
+    const response = await api.put('/system-status', updates);
+    console.log('System status update response:', response.data);
+    return response.data;
+  } catch (error) {
+    const axiosError = error as AxiosError;
+    console.error('Error updating system status:', axiosError);
+    if (axiosError.response) {
+      console.error('Error response:', axiosError.response.data);
+    }
+    throw new Error(axiosError.response?.data?.error || axiosError.message);
+  }
+};
+
 // Temperature History
 export const getTemperatureHistory = async (): Promise<TemperatureHistory> => {
   try {

@@ -25,45 +25,23 @@ router.put('/', async (req, res) => {
   debug('PUT /api/system-status request received');
   try {
     const updates = req.body;
+    console.log('Received updates:', updates);
+
     let systemStatus = await SystemStatus.findOne();
     if (!systemStatus) {
       systemStatus = new SystemStatus();
     }
 
-    // Validate system mode and component status combinations
+    // Adjust component statuses based on the new system mode
     if (updates.systemMode === 'Cooling') {
-      if (updates.heaterStatus === 'Running') {
-        return res.status(400).json({ 
-          error: 'Invalid state', 
-          message: 'Heater cannot be running in Cooling mode' 
-        });
-      }
+      updates.chillerStatus = 'Running';
       updates.heaterStatus = 'Off';
     } else if (updates.systemMode === 'Heating') {
-      if (updates.chillerStatus === 'Running') {
-        return res.status(400).json({ 
-          error: 'Invalid state', 
-          message: 'Chiller cannot be running in Heating mode' 
-        });
-      }
       updates.chillerStatus = 'Off';
+      updates.heaterStatus = 'Running';
     } else if (updates.systemMode === 'Idle') {
-      if (updates.chillerStatus === 'Running' || updates.heaterStatus === 'Running') {
-        return res.status(400).json({ 
-          error: 'Invalid state', 
-          message: 'Neither chiller nor heater can be running in Idle mode' 
-        });
-      }
       updates.chillerStatus = 'Standby';
       updates.heaterStatus = 'Standby';
-    }
-
-    // Prevent simultaneous running of chiller and heater
-    if (updates.chillerStatus === 'Running' && updates.heaterStatus === 'Running') {
-      return res.status(400).json({ 
-        error: 'Invalid state', 
-        message: 'Chiller and heater cannot run simultaneously' 
-      });
     }
 
     // Update only allowed fields
@@ -73,6 +51,8 @@ router.put('/', async (req, res) => {
         systemStatus[field] = updates[field];
       }
     });
+
+    console.log('Updated system status before save:', systemStatus);
 
     await systemStatus.save();
     debug('System status updated successfully:', systemStatus);

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { TankCard } from "@/components/TankCard"
 import { SystemStatus } from "@/components/SystemStatus"
-import { getTanks, getSystemStatus, Tank as TankType, createTank, SystemStatus as SystemStatusType } from "@/api/tanks"
+import { getTanks, getSystemStatus, updateSystemStatus, Tank as TankType, createTank, SystemStatus as SystemStatusType } from "@/api/tanks"
 import { useToast } from "@/hooks/useToast"
 import { TankDialog } from "@/components/TankDialog"
 import { Button } from "@/components/ui/button"
@@ -86,6 +86,10 @@ export function Dashboard() {
     fetchTanks()
   }
 
+  const handleStatusUpdate = (newStatus: SystemStatusType) => {
+    setSystemStatus(newStatus)
+  }
+
   const handleAddTank = async () => {
     try {
       const newTankNumber = tanks.length + 1
@@ -142,7 +146,7 @@ export function Dashboard() {
           onDelete={handleTankUpdate}
         />
       )}
-      <SystemStatus status={systemStatus} />
+      <SystemStatus status={systemStatus} onStatusUpdate={handleStatusUpdate} />
     </div>
   )
 }
