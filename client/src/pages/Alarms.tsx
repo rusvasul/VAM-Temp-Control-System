@@ -5,8 +5,9 @@ import { Bell, CheckCircle2, XCircle } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { getAlarms } from '@/api/alarms';
+import { getAlarms, createAlarm } from '@/api/alarms';
 import { useToast } from "@/hooks/useToast";
+import { AlarmForm } from '@/components/AlarmForm';
 
 interface Alarm {
   _id: string;
@@ -47,9 +48,28 @@ export function Alarms() {
     }
   };
 
+  const handleCreateAlarm = async (alarmData: any) => {
+    try {
+      const newAlarm = await createAlarm(alarmData);
+      setAlarms([...alarms, newAlarm]);
+      toast({
+        title: "Success",
+        description: "Alarm created successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="space-y-4 p-8 pt-6">
       <h2 className="text-3xl font-bold tracking-tight">Alarms</h2>
+
+      <AlarmForm onSubmit={handleCreateAlarm} />
 
       <Card>
         <CardHeader>
