@@ -27,6 +27,7 @@ const alarmRoutes = require('./routes/alarms');
 const settingsRoutes = require('./routes/settings');
 const beerStyleRoutes = require('./routes/beerStyles');
 const cleaningScheduleRoutes = require('./routes/cleaningSchedules');
+const productionScheduleRoutes = require('./routes/productionSchedules');
 
 // Initialize express app
 const app = express();
@@ -82,7 +83,13 @@ const initializeServer = async () => {
     app.use('/api/auth', authRoutes);
 
     // Apply authentication middleware for protected routes
-    app.use('/api', authenticateWithToken);
+    app.use('/api', (req, res, next) => {
+      // Skip authentication for production schedules
+      if (req.path.startsWith('/production-schedules')) {
+        return next();
+      }
+      authenticateWithToken(req, res, next);
+    });
 
     // Protected routes requiring authentication
     debug('Mounting protected routes');
@@ -92,6 +99,7 @@ const initializeServer = async () => {
     app.use('/api/settings', requireUser, settingsRoutes);
     app.use('/api/beer-styles', requireUser, beerStyleRoutes);
     app.use('/api/cleaning-schedules', cleaningScheduleRoutes);
+    app.use('/api/production-schedules', productionScheduleRoutes);
     debug('Protected routes mounted');
     debug('Beer styles routes registered');
     debug('Cleaning schedules routes mounted');
