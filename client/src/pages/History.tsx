@@ -1,18 +1,72 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Calendar } from "@/components/ui/calendar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { getTanks, getTemperatureHistory } from "@/api/tanks"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { AlertCircle } from "lucide-react"
 
-const mockHistoryData = [
-  { timestamp: "2024-01-15 14:30", tankId: 1, temperature: 68.5, event: "Temperature adjusted" },
-  { timestamp: "2024-01-15 14:00", tankId: 2, temperature: 70.2, event: "Valve opened" },
-  { timestamp: "2024-01-15 13:30", tankId: 3, temperature: 69.8, event: "Mode changed to cooling" },
-]
+interface HistoryRecord {
+  timestamp: string;
+  temperature: number;
+}
+
+interface Tank {
+  id: string;
+  name: string;
+}
 
 export function History() {
   const [date, setDate] = useState<Date>(new Date())
-  const [selectedTank, setSelectedTank] = useState("all")
+  const [selectedTank, setSelectedTank] = useState<string>("all")
+  const [tanks, setTanks] = useState<Tank[]>([])
+  const [historyData, setHistoryData] = useState<HistoryRecord[]>([])
+  const [error, setError] = useState<string | null>(null)
+
+  // Fetch tanks on component mount
+  useEffect(() => {
+    const fetchTanks = async () => {
+      try {
+        const tanksData = await getTanks()
+        setTanks(tanksData)
+      } catch (error) {
+        console.error('Error fetching tanks:', error)
+        setError('Failed to fetch tanks')
+      }
+    }
+    fetchTanks()
+  }, [])
+
+  // Fetch temperature history when tank or date changes
+  useEffect(() => {
+    const fetchHistory = async () => {
+      if (selectedTank === "all") {
+        setHistoryData([])
+        return
+      }
+
+      try {
+        setError(null)
+        const startDate = new Date(date)
+        startDate.setHours(0, 0, 0, 0)
+        const endDate = new Date(date)
+        endDate.setHours(23, 59, 59, 999)
+
+        const response = await getTemperatureHistory(
+          selectedTank,
+          startDate.toISOString(),
+          endDate.toISOString()
+        )
+        setHistoryData(response.history)
+      } catch (error) {
+        console.error('Error fetching temperature history:', error)
+        setError('Failed to fetch temperature history')
+      }
+    }
+
+    fetchHistory()
+  }, [selectedTank, date])
 
   return (
     <div className="space-y-4 p-8 pt-6">
@@ -44,9 +98,9 @@ export function History() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Tanks</SelectItem>
-                {Array.from({ length: 9 }, (_, i) => (
-                  <SelectItem key={i + 1} value={(i + 1).toString()}>
-                    Tank {i + 1}
+                {tanks.map((tank) => (
+                  <SelectItem key={tank.id} value={tank.id}>
+                    {tank.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -55,29 +109,42 @@ export function History() {
         </Card>
       </div>
 
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
       <Card>
         <CardHeader>
-          <CardTitle>Event History</CardTitle>
+          <CardTitle>Temperature History</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Timestamp</TableHead>
-                <TableHead>Tank</TableHead>
                 <TableHead>Temperature</TableHead>
-                <TableHead>Event</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {mockHistoryData.map((record, index) => (
-                <TableRow key={index}>
-                  <TableCell>{record.timestamp}</TableCell>
-                  <TableCell>Tank {record.tankId}</TableCell>
-                  <TableCell>{record.temperature}°F</TableCell>
-                  <TableCell>{record.event}</TableCell>
+              {historyData.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={2} className="text-center">
+                    {selectedTank === "all" 
+                      ? "Please select a tank to view its temperature history" 
+                      : "No temperature records found for the selected date"}
+                  </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                historyData.map((record, index) => (
+                  <TableRow key={index}>
+                    <TableCell>{new Date(record.timestamp).toLocaleString()}</TableCell>
+                    <TableCell>{record.temperature}°F</TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>

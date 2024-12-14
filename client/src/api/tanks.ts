@@ -94,20 +94,21 @@ export const updateSystemStatus = async (updates: Partial<SystemStatus>): Promis
 };
 
 // Temperature History
-export const getTemperatureHistory = async (): Promise<TemperatureHistory> => {
+export const getTemperatureHistory = async (tankId: string, startDate?: string, endDate?: string): Promise<TemperatureHistory> => {
   try {
-    const response = await api.get('/temperature-history');
+    let url = `/tanks/${tankId}/temperature-history`;
+    if (startDate && endDate) {
+      url += `?start=${startDate}&end=${endDate}`;
+    }
+    const response = await api.get(url);
     return response.data;
   } catch (error) {
-    console.error('Error fetching temperature history:', error);
-    // Fallback to mock data if API fails
-    return {
-      history: Array.from({ length: 24 }, (_, i) => ({
-        timestamp: new Date(Date.now() - i * 3600000).toISOString(),
-        temperature: 65 + Math.random() * 10,
-        tankId: '1'
-      }))
-    };
+    const axiosError = error as AxiosError;
+    console.error('Error fetching temperature history:', axiosError);
+    if (axiosError.response) {
+      console.error('Error response:', axiosError.response.data);
+    }
+    throw error;
   }
 };
 

@@ -10,13 +10,16 @@ const connectDB = require('./config/database');
 const SSE = require('express-sse');
 const sse = new SSE();
 
+// Models
+require('./models/TemperatureHistory');
+
 // Routes
 const basicRoutes = require('./routes/index');
 const authRoutes = require('./routes/auth');
 const tankRoutes = require('./routes/tanks');
 const systemStatusRoutes = require('./routes/systemStatus');
 
-// Initialize express app
+// Initialize express app 
 const app = express();
 const port = process.env.PORT || 3000;
 
