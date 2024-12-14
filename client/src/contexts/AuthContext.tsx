@@ -30,10 +30,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const checkAuth = async () => {
       try {
         const token = localStorage.getItem("token");
-        const userIsAdmin = localStorage.getItem("isAdmin") === "true";
+        const isAdminStr = localStorage.getItem("isAdmin");
         setIsAuthenticated(!!token);
-        setIsAdmin(userIsAdmin);
-        console.log("AuthContext: Authentication check result", isAuthenticated);
+        setIsAdmin(isAdminStr === 'true');
+        console.log("AuthContext: Authentication check result", { isAuthenticated, isAdmin });
       } catch (error) {
         console.error("AuthContext: Error checking authentication", error);
       } finally {
@@ -88,6 +88,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     try {
       await apiLogout();
+      localStorage.removeItem("token");
+      localStorage.removeItem("isAdmin");
       setIsAuthenticated(false);
       setIsAdmin(false);
       console.log("AuthContext: User logged out");

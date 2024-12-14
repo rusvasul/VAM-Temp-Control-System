@@ -1,23 +1,30 @@
-const UserService = require('../../services/user.js');
+const jwt = require('jsonwebtoken');
+const User = require('../../models/User');
 
-const authenticateWithToken = (req, res, next) => {
-  const authHeader = req.get('Authorization');
-  if (authHeader) {
-    const m = authHeader.match(/^(Token|Bearer) (.+)/i);
-    if (m) {
-      UserService.authenticateWithToken(m[2])
-        .then((user) => {
-          req.user = user;
-          next();
-        })
-        .catch((err) => {
-          next(err);
-        });
-      return;
+const authenticateWithToken = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      return next();
     }
-  }
 
-  next();
+    const [bearer, token] = authHeader.split(' ');
+    if (bearer !== 'Bearer' || !token) {
+      return next();
+    }
+
+    const decoded = jwt.verify(token, process.env.SESSION_SECRET);
+    const user = await User.findById(decoded.userId);
+    if (!user) {
+      return next();
+    }
+
+    req.user = user;
+    next();
+  } catch (error) {
+    console.error('Authentication error:', error);
+    next();
+  }
 };
 
 const requireUser = (req, res, next) => {
@@ -28,7 +35,15 @@ const requireUser = (req, res, next) => {
   next();
 };
 
+const requireAdmin = (req, res, next) => {
+  if (!req.user || !req.user.isAdmin) {
+    return res.status(403).json({ error: 'Access denied. Admin privileges required.' });
+  }
+  next();
+};
+
 module.exports = {
   authenticateWithToken,
   requireUser,
+  requireAdmin,
 };

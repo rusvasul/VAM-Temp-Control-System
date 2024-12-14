@@ -8,8 +8,12 @@ const api = axios.create({
   withCredentials: true
 });
 
-// Add request interceptor for debugging
+// Add request interceptor for authentication
 api.interceptors.request.use(request => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    request.headers.Authorization = `Bearer ${token}`;
+  }
   console.log('Starting Request:', request.method, request.url);
   return request;
 });
@@ -25,6 +29,13 @@ api.interceptors.response.use(
     if (error.response) {
       console.error('Error Data:', error.response.data);
       console.error('Error Status:', error.response.status);
+      
+      // Handle authentication errors
+      if (error.response.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('isAdmin');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }

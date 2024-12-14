@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const bcrypt = require('bcrypt');
-const User = require('../models/User');
+const UserService = require('../services/user');
 const jwt = require('jsonwebtoken');
 const logger = require('../utils/log');
 
@@ -11,23 +10,25 @@ logger.info('Auth routes initialized');
 // Register route
 router.post('/register', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, isAdmin = false } = req.body;
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      logger.warn(`Registration attempt with existing email: ${email}`);
+    // Create new user using UserService
+    const user = await UserService.createUser({ email, password, isAdmin });
+
+    // Generate JWT token for immediate login
+    const { token } = await UserService.regenerateToken(user);
+
+    logger.info(`New user registered: ${email} with isAdmin: ${isAdmin}`);
+    res.status(201).json({
+      message: 'User created successfully',
+      token,
+      isAdmin: user.isAdmin
+    });
+  } catch (error) {
+    logger.error(`Registration error: ${error}`);
+    if (error === 'User with this email already exists') {
       return res.status(400).json({ error: 'User already exists' });
     }
-
-    // Create new user
-    const user = new User({ email, password });
-    await user.save();
-
-    logger.info(`New user registered: ${email}`);
-    res.status(201).json({ message: 'User created successfully' });
-  } catch (error) {
-    logger.error(`Registration error: ${error.message}`);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -43,29 +44,20 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    const user = await User.findOne({ email });
+    // Authenticate user with password
+    const user = await UserService.authenticateWithPassword(email, password);
     if (!user) {
-      logger.warn(`Login attempt with non-existent email: ${email}`);
-      return res.status(400).json({ error: 'Invalid credentials' });
-    }
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
       logger.warn(`Failed login attempt for user: ${email}`);
       return res.status(400).json({ error: 'Invalid credentials' });
     }
 
-    // Generate JWT token
-    const token = jwt.sign(
-      { userId: user._id },
-      process.env.SESSION_SECRET,
-      { expiresIn: '1h' }
-    );
+    // Generate new token
+    const { token } = await UserService.regenerateToken(user);
 
-    logger.info(`User logged in successfully: ${email}`);
+    logger.info(`User logged in successfully: ${email} with isAdmin: ${user.isAdmin}`);
     res.json({
       token,
-      isAdmin: user.isAdmin || false,
+      isAdmin: user.isAdmin,
       message: 'Login successful'
     });
   } catch (error) {

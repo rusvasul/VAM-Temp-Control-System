@@ -1,4 +1,5 @@
 const { randomUUID } = require('crypto');
+const jwt = require('jsonwebtoken');
 
 const User = require('../models/user.js');
 const { generatePasswordHash, validatePassword } = require('../utils/password.js');
@@ -66,27 +67,24 @@ class UserService {
 
   static async authenticateWithToken(token) {
     try {
-      return User.findOne({ token }).exec();
+      const decoded = jwt.verify(token, process.env.SESSION_SECRET);
+      return User.findById(decoded.userId).exec();
     } catch (err) {
-      throw `Database error while authenticating user ${email} with token: ${err}`;
+      throw `Invalid or expired token: ${err}`;
     }
   }
 
   static async regenerateToken(user) {
-    user.token = randomUUID(); // eslint-disable-line
+    const token = jwt.sign(
+      { userId: user._id, isAdmin: user.isAdmin },
+      process.env.SESSION_SECRET,
+      { expiresIn: '1h' }
+    );
 
-    try {
-      if (!user.isNew) {
-        await user.save();
-      }
-
-      return user;
-    } catch (err) {
-      throw `Database error while generating user token: ${err}`;
-    }
+    return { user, token };
   }
 
-  static async createUser({ email, password, name = '' }) {
+  static async createUser({ email, password, isAdmin = false }) {
     if (!email) throw 'Email is required';
     if (!password) throw 'Password is required';
 
@@ -99,8 +97,7 @@ class UserService {
       const user = new User({
         email,
         password: hash,
-        name,
-        token: randomUUID(),
+        isAdmin
       });
 
       await user.save();
@@ -112,7 +109,7 @@ class UserService {
 
   static async setPassword(user, password) {
     if (!password) throw 'Password is required';
-    user.password = await generatePasswordHash(password); // eslint-disable-line
+    user.password = await generatePasswordHash(password);
 
     try {
       if (!user.isNew) {

@@ -10,6 +10,7 @@ const connectDB = require('./config/database');
 const SSE = require('express-sse');
 const sse = new SSE();
 const AlarmMonitor = require('./services/alarmMonitor');
+const { authenticateWithToken, requireUser, requireAdmin } = require('./routes/middleware/auth');
 
 // Models
 require('./models/TemperatureHistory');
@@ -71,13 +72,22 @@ const initializeServer = async () => {
     app.get('/events', sse.init);
     debug('SSE endpoints initialized');
 
-    // Routes
+    // Public routes
     app.use('/', basicRoutes);
     app.use('/api/auth', authRoutes);
-    app.use('/api/tanks', tankRoutes);
-    app.use('/api/system-status', systemStatusRoutes);
-    app.use('/api/alarms', alarmRoutes);
-    debug('Routes mounted');
+
+    // Apply authentication middleware for protected routes
+    app.use('/api', authenticateWithToken);
+    
+    // Protected routes requiring authentication
+    app.use('/api/tanks', requireUser, tankRoutes);
+    app.use('/api/system-status', requireUser, systemStatusRoutes);
+    app.use('/api/alarms', requireUser, alarmRoutes);
+
+    // Admin-only routes
+    app.use('/api/admin', requireUser, requireAdmin);
+
+    debug('Routes mounted with role-based access control');
 
     // Error handling middleware
     app.use((err, req, res, next) => {
