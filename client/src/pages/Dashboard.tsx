@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/useToast"
 import { TankDialog } from "@/components/TankDialog"
 import { Button } from "@/components/ui/button"
 import { PlusCircle } from "lucide-react"
+import { CleaningSchedules } from "@/components/CleaningSchedules"
 
 export function Dashboard() {
   const [tanks, setTanks] = useState<TankType[]>([])
@@ -116,7 +117,7 @@ export function Dashboard() {
   }
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="container mx-auto p-4 space-y-8">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">Dashboard</h1>
         <Button onClick={handleAddTank}>
@@ -143,6 +144,7 @@ export function Dashboard() {
         />
       )}
       <SystemStatus initialStatus={systemStatus} onStatusUpdate={handleStatusUpdate} />
+      <CleaningSchedules tanks={tanks} />
     </div>
-  )
+  );
 }

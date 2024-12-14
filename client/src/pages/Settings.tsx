@@ -6,92 +6,70 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useSettings } from "@/contexts/SettingsContext"
 import { useToast } from "@/hooks/useToast"
 import { Save, Loader2 } from "lucide-react"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Settings as SettingsType } from "@/api/settings"
+import { CleaningSchedules } from "@/components/CleaningSchedules"
 
 export function Settings() {
   const { temperatureUnit, refreshRate, numberOfTanks, updateSettings, isLoading } = useSettings();
   const { toast } = useToast();
-  const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState<SettingsType>({
     temperatureUnit,
     refreshRate,
     numberOfTanks
   });
 
-  // Update form data when settings change
-  useEffect(() => {
-    setFormData({
-      temperatureUnit,
-      refreshRate,
-      numberOfTanks
-    });
-  }, [temperatureUnit, refreshRate, numberOfTanks]);
-
-  const handleSave = async () => {
+  const handleSubmit = async () => {
     try {
-      setIsSaving(true);
       await updateSettings(formData);
     } catch (error) {
-      console.error('Failed to save settings:', error);
-      toast({
-        title: "Error",
-        description: "Failed to save settings. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSaving(false);
+      console.error('Error updating settings:', error);
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-4 p-8 pt-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-bold tracking-tight">Settings</h2>
-        <Button onClick={handleSave} disabled={isSaving}>
-          {isSaving ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <Save className="mr-2 h-4 w-4" />
-          )}
-          Save Changes
-        </Button>
-      </div>
-
+    <div className="container mx-auto p-6 space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>System Configuration</CardTitle>
+          <CardTitle className="text-2xl font-bold flex items-center justify-between">
+            Settings
+            <Button onClick={handleSubmit} disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="mr-2 h-4 w-4" />
+                  Save Changes
+                </>
+              )}
+            </Button>
+          </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+        <CardContent>
+          <div className="space-y-6">
             <div className="space-y-2">
               <Label>Temperature Unit</Label>
               <Select
                 value={formData.temperatureUnit}
-                onValueChange={(value: 'celsius' | 'fahrenheit') => 
-                  setFormData(prev => ({ ...prev, temperatureUnit: value }))
+                onValueChange={(value) =>
+                  setFormData(prev => ({ ...prev, temperatureUnit: value as 'celsius' | 'fahrenheit' }))
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select unit" />
+                  <SelectValue placeholder="Select temperature unit" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="fahrenheit">Fahrenheit (°F)</SelectItem>
-                  <SelectItem value="celsius">Celsius (°C)</SelectItem>
+                  <SelectItem value="celsius">Celsius</SelectItem>
+                  <SelectItem value="fahrenheit">Fahrenheit</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <Label>Data Refresh Rate (seconds)</Label>
+              <Label>Refresh Rate (seconds)</Label>
               <Input
                 type="number"
                 min="1"
@@ -124,6 +102,11 @@ export function Settings() {
           </div>
         </CardContent>
       </Card>
+
+      <CleaningSchedules tanks={Array.from({ length: formData.numberOfTanks }, (_, i) => ({
+        id: (i + 1).toString(),
+        name: `Tank ${i + 1}`
+      }))} />
     </div>
   );
 }

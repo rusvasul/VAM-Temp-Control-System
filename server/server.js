@@ -16,6 +16,7 @@ const { authenticateWithToken, requireUser, requireAdmin } = require('./routes/m
 require('./models/TemperatureHistory');
 require('./models/Alarm');
 require('./models/Settings');
+require('./models/CleaningSchedule');
 
 // Routes
 const basicRoutes = require('./routes/index');
@@ -25,10 +26,11 @@ const systemStatusRoutes = require('./routes/systemStatus');
 const alarmRoutes = require('./routes/alarms');
 const settingsRoutes = require('./routes/settings');
 const beerStyleRoutes = require('./routes/beerStyles');
+const cleaningScheduleRoutes = require('./routes/cleaningSchedules');
 
 // Initialize express app
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 3001;
 
 // Make SSE instance available globally
 app.set('sse', sse);
@@ -89,8 +91,10 @@ const initializeServer = async () => {
     app.use('/api/alarms', requireUser, alarmRoutes);
     app.use('/api/settings', requireUser, settingsRoutes);
     app.use('/api/beer-styles', requireUser, beerStyleRoutes);
+    app.use('/api/cleaning-schedules', cleaningScheduleRoutes);
     debug('Protected routes mounted');
     debug('Beer styles routes registered');
+    debug('Cleaning schedules routes mounted');
 
     // Log all registered routes with authentication info
     debug('Registered routes:');

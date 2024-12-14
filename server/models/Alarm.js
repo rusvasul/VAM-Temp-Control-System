@@ -23,8 +23,7 @@ const AlarmSchema = new mongoose.Schema({
     }
   },
   tankId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Tank',
+    type: String,
     required: true
   },
   isActive: {

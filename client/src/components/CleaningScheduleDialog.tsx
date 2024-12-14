@@ -1,80 +1,152 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useState } from "react"
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { format } from "date-fns";
+import { CreateCleaningScheduleDto } from "@/api/cleaningSchedules";
 
-interface CleaningScheduleDialogProps {
-  isOpen: boolean
-  onClose: () => void
-  onSave: (schedule: {
-    tankId: string;
-    schedule: string;
-    lastCleaning: string;
-  }) => void
-  numberOfTanks: number
+interface Tank {
+  id: string;
+  name: string;
 }
 
-export function CleaningScheduleDialog({ isOpen, onClose, onSave, numberOfTanks }: CleaningScheduleDialogProps) {
-  const [schedule, setSchedule] = useState({
-    tankId: "1",
-    schedule: "Weekly",
-    lastCleaning: new Date().toISOString().split('T')[0]
-  })
+interface CleaningScheduleDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (schedule: CreateCleaningScheduleDto) => void;
+  tanks: Tank[];
+}
 
-  const handleSave = () => {
-    onSave(schedule)
-    onClose()
-  }
+type ScheduleType = 'recurring' | 'single';
+type ScheduleFrequency = 'Daily' | 'Weekly' | 'Bi-weekly' | 'Monthly';
+
+export function CleaningScheduleDialog({
+  isOpen,
+  onClose,
+  onSave,
+  tanks
+}: CleaningScheduleDialogProps) {
+  const [scheduleType, setScheduleType] = useState<ScheduleType>('recurring');
+  const [formData, setFormData] = useState({
+    tankId: '',
+    schedule: 'Weekly' as ScheduleFrequency,
+    lastCleaning: format(new Date(), 'yyyy-MM-dd')
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const schedule: CreateCleaningScheduleDto = {
+      tankId: formData.tankId,
+      type: scheduleType,
+      lastCleaning: formData.lastCleaning,
+      schedule: scheduleType === 'recurring' ? formData.schedule : undefined
+    };
+
+    onSave(schedule);
+  };
+
+  const handleClose = () => {
+    setFormData({
+      tankId: '',
+      schedule: 'Weekly',
+      lastCleaning: format(new Date(), 'yyyy-MM-dd')
+    });
+    setScheduleType('recurring');
+    onClose();
+  };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px] bg-background">
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Add Cleaning Schedule</DialogTitle>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="tank" className="text-right">Tank</Label>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label>Tank</Label>
             <Select
-              value={schedule.tankId}
-              onValueChange={(value) => setSchedule({ ...schedule, tankId: value })}
+              value={formData.tankId}
+              onValueChange={(value) => setFormData({ ...formData, tankId: value })}
             >
-              <SelectTrigger className="col-span-3">
+              <SelectTrigger>
                 <SelectValue placeholder="Select tank" />
               </SelectTrigger>
               <SelectContent>
-                {Array.from({ length: numberOfTanks }, (_, i) => (
-                  <SelectItem key={i + 1} value={(i + 1).toString()}>
-                    Tank {i + 1}
+                {tanks.map((tank) => (
+                  <SelectItem key={tank.id} value={tank.id}>
+                    {tank.name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="frequency" className="text-right">Frequency</Label>
-            <Select
-              value={schedule.schedule}
-              onValueChange={(value) => setSchedule({ ...schedule, schedule: value })}
+
+          <div className="space-y-2">
+            <Label>Schedule Type</Label>
+            <RadioGroup
+              value={scheduleType}
+              onValueChange={(value: ScheduleType) => setScheduleType(value)}
+              className="flex space-x-4"
             >
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Select frequency" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Daily">Daily</SelectItem>
-                <SelectItem value="Weekly">Weekly</SelectItem>
-                <SelectItem value="Bi-weekly">Bi-weekly</SelectItem>
-                <SelectItem value="Monthly">Monthly</SelectItem>
-              </SelectContent>
-            </Select>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="recurring" id="recurring" />
+                <Label htmlFor="recurring">Recurring</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="single" id="single" />
+                <Label htmlFor="single">Single Date</Label>
+              </div>
+            </RadioGroup>
           </div>
-        </div>
-        <div className="flex justify-end gap-3">
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSave}>Save</Button>
-        </div>
+
+          {scheduleType === 'recurring' && (
+            <div className="space-y-2">
+              <Label>Frequency</Label>
+              <Select
+                value={formData.schedule}
+                onValueChange={(value: ScheduleFrequency) => 
+                  setFormData({ ...formData, schedule: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Daily">Daily</SelectItem>
+                  <SelectItem value="Weekly">Weekly</SelectItem>
+                  <SelectItem value="Bi-weekly">Bi-weekly</SelectItem>
+                  <SelectItem value="Monthly">Monthly</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <Label>{scheduleType === 'recurring' ? 'First Cleaning Date' : 'Cleaning Date'}</Label>
+            <Input
+              type="date"
+              value={formData.lastCleaning}
+              onChange={(e) => setFormData({ ...formData, lastCleaning: e.target.value })}
+              min={format(new Date(), 'yyyy-MM-dd')}
+            />
+          </div>
+
+          <div className="flex justify-end space-x-2">
+            <Button type="button" variant="outline" onClick={handleClose}>
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              disabled={!formData.tankId || !formData.lastCleaning}
+            >
+              Save
+            </Button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
