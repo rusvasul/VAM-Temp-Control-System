@@ -38,18 +38,22 @@ const authenticateWithToken = async (req, res, next) => {
 };
 
 const requireUser = (req, res, next) => {
+  debug('Checking user requirement');
   if (!req.user) {
     debug('User authentication required');
     return res.status(401).json({ error: 'Authentication required' });
   }
+  debug('User requirement satisfied');
   next();
 };
 
 const requireAdmin = (req, res, next) => {
+  debug('Checking admin requirement');
   if (!req.user || !req.user.isAdmin) {
     debug('Admin privileges required');
     return res.status(403).json({ error: 'Access denied. Admin privileges required.' });
   }
+  debug('Admin requirement satisfied');
   next();
 };
 

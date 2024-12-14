@@ -9,7 +9,6 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   console.log('ProtectedRoute state:', { isAuthenticated, isLoading, pathname: location.pathname });
 
   if (isLoading) {
-    console.log('ProtectedRoute: Loading state');
     return (
       <div className="h-screen w-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin" />

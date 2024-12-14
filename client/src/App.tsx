@@ -17,6 +17,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute"
 import { Sidebar } from "./components/Sidebar"
 import { Header } from "./components/Header"
 import { useEffect } from "react"
+import { BeerStyles } from "./pages/BeerStyles"
 
 function App() {
   console.log("App component rendering");
@@ -61,6 +62,7 @@ function App() {
                   <Route path="alarms" element={<Alarms />} />
                   <Route path="settings" element={<Settings />} />
                   <Route path="admin" element={<Admin />} />
+                  <Route path="beer-styles" element={<BeerStyles />} />
                 </Route>
               </Routes>
               <Toaster />

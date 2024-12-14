@@ -7,6 +7,7 @@ import {
   Settings,
   Bell,
   Shield,
+  Beer,
 } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 
@@ -40,6 +41,12 @@ const getRoutes = (isAdmin: boolean) => [
     icon: Settings,
     href: "/settings",
     color: "text-emerald-500",
+  },
+  {
+    label: "Beer Styles",
+    icon: Beer,
+    href: "/beer-styles",
+    color: "text-amber-500",
   },
   ...(isAdmin ? [{
     label: "Admin",

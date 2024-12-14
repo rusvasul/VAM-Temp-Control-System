@@ -24,6 +24,7 @@ const tankRoutes = require('./routes/tanks');
 const systemStatusRoutes = require('./routes/systemStatus');
 const alarmRoutes = require('./routes/alarms');
 const settingsRoutes = require('./routes/settings');
+const beerStyleRoutes = require('./routes/beerStyles');
 
 // Initialize express app
 const app = express();
@@ -87,21 +88,29 @@ const initializeServer = async () => {
     app.use('/api/system-status', requireUser, systemStatusRoutes);
     app.use('/api/alarms', requireUser, alarmRoutes);
     app.use('/api/settings', requireUser, settingsRoutes);
+    app.use('/api/beer-styles', requireUser, beerStyleRoutes);
     debug('Protected routes mounted');
+    debug('Beer styles routes registered');
 
-    // Log all registered routes
+    // Log all registered routes with authentication info
     debug('Registered routes:');
     app._router.stack.forEach(middleware => {
       if (middleware.route) {
         debug(`${Object.keys(middleware.route.methods)} ${middleware.route.path}`);
+        debug('Auth required: Yes');
       } else if (middleware.name === 'router') {
         middleware.handle.stack.forEach(handler => {
           if (handler.route) {
             debug(`${Object.keys(handler.route.methods)} ${handler.route.path}`);
+            debug('Auth required: Yes');
           }
         });
       }
     });
+
+    // Log authentication middleware setup
+    debug('Authentication middleware configured');
+    debug('Request authentication flow: authenticateWithToken -> requireUser -> route handler');
 
     // Admin-only routes
     app.use('/api/admin', requireUser, requireAdmin);

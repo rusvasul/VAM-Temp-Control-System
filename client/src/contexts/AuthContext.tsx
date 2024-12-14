@@ -29,11 +29,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const token = localStorage.getItem("token");
         const isAdminStr = localStorage.getItem("isAdmin");
-        setIsAuthenticated(!!token);
-        setIsAdmin(isAdminStr === 'true');
-        console.log("AuthContext: Authentication check result", { isAuthenticated, isAdmin });
+        
+        if (token) {
+          setIsAuthenticated(true);
+          setIsAdmin(isAdminStr === 'true');
+        } else {
+          setIsAuthenticated(false);
+          setIsAdmin(false);
+        }
+        console.log("AuthContext: Authentication check result", { isAuthenticated: !!token, isAdmin: isAdminStr === 'true' });
       } catch (error) {
         console.error("AuthContext: Error checking authentication", error);
+        setIsAuthenticated(false);
+        setIsAdmin(false);
       } finally {
         setIsLoading(false);
       }

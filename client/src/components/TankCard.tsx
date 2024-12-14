@@ -3,9 +3,7 @@ import { Badge } from "@/components/ui/badge"
 import { ThermometerIcon, Gauge, Clock } from "lucide-react"
 import { useState, useEffect } from "react"
 import { TankDialog } from "./TankDialog"
-import { Progress } from "@/components/ui/progress"
 import { useSettings } from "@/contexts/SettingsContext"
-import { cn } from "@/lib/utils"
 
 interface TankCardProps {
   id: string;
@@ -22,18 +20,20 @@ export function TankCard({ id, name, temperature, status, mode, valveStatus, onC
   const settings = useSettings();
   const [progressValue, setProgressValue] = useState(0)
 
-  // Calculate progress value based on temperature and settings
+  // Calculate progress value based on fixed range (30°F to 150°F)
   useEffect(() => {
-    const range = settings.maxTemp - settings.minTemp;
-    const value = ((temperature - settings.minTemp) / range) * 100;
+    const minTemp = 30;
+    const maxTemp = 150;
+    const range = maxTemp - minTemp;
+    const value = ((temperature - minTemp) / range) * 100;
     setProgressValue(Math.min(Math.max(value, 0), 100));
-  }, [temperature, settings.minTemp, settings.maxTemp]);
+  }, [temperature]);
 
   const timeInService = "14:30:00"; // Mock time in service
-  const setPoint = settings.maxTemp - ((settings.maxTemp - settings.minTemp) / 2); // Mock setpoint
+  const setPoint = 68; // This should come from your tank data or settings
 
-  // Calculate setpoint position as percentage
-  const setPointPosition = ((setPoint - settings.minTemp) / (settings.maxTemp - settings.minTemp)) * 100;
+  // Calculate setpoint position as percentage of the fixed range
+  const setPointPosition = ((setPoint - 30) / (150 - 30)) * 100;
 
   return (
     <>
@@ -56,13 +56,7 @@ export function TankCard({ id, name, temperature, status, mode, valveStatus, onC
               <span className="text-2xl font-bold">{temperature}°F</span>
             </div>
 
-            <div className="relative pt-8 pb-4">
-              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center z-10">
-                <div className="text-sm font-medium text-foreground">{temperature}°F</div>
-                <div className="text-xs text-muted-foreground">
-                  {settings.minTemp}°F - {settings.maxTemp}°F
-                </div>
-              </div>
+            <div className="relative pt-6 pb-2">
               <div className="relative">
                 <div 
                   className="h-4 w-full rounded-full overflow-hidden"
@@ -77,14 +71,21 @@ export function TankCard({ id, name, temperature, status, mode, valveStatus, onC
                     }}
                   />
                 </div>
-                <div
-                  className="absolute top-0 h-full w-1 bg-white"
-                  style={{
-                    left: `${setPointPosition}%`,
-                    transform: 'translateX(-50%)',
-                    boxShadow: '0 0 2px rgba(0,0,0,0.3)'
-                  }}
-                />
+                <div className="absolute inset-0 pointer-events-none">
+                  <div
+                    className="absolute -top-4 transform -translate-x-1/2 text-xs font-medium"
+                    style={{ left: `${setPointPosition}%` }}
+                  >
+                    {setPoint}°F
+                  </div>
+                  <div
+                    className="absolute top-0 h-4 w-0.5 bg-white transform -translate-x-1/2"
+                    style={{
+                      left: `${setPointPosition}%`,
+                      boxShadow: '0 0 2px rgba(0,0,0,0.3)'
+                    }}
+                  />
+                </div>
               </div>
             </div>
 
@@ -115,9 +116,7 @@ export function TankCard({ id, name, temperature, status, mode, valveStatus, onC
           status,
           mode,
           valveStatus,
-          location: "Main Floor", // Mock data
-          contents: "Beer", // Mock data
-          setPoint: setPoint
+          setPoint
         }}
       />
     </>

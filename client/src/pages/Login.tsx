@@ -39,7 +39,7 @@ export function Login() {
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.message || "Login failed",
+        description: typeof error === 'string' ? error : "Login failed",
       })
     } finally {
       setLoading(false)

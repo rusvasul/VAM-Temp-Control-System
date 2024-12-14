@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, ReactNode, useCallback, useEffect } from "react";
 import { getSettings, updateSettings as apiUpdateSettings, Settings } from "@/api/settings";
 import { useToast } from "@/hooks/useToast";
+import { useAuth } from "@/contexts/AuthContext";
 
 type SettingsContextType = {
   temperatureUnit: 'celsius' | 'fahrenheit';
@@ -22,10 +23,16 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<Settings>(defaultSettings);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const { isAuthenticated } = useAuth();
 
-  // Fetch settings on mount
+  // Fetch settings only when authenticated
   useEffect(() => {
     const fetchSettings = async () => {
+      if (!isAuthenticated) {
+        setIsLoading(false);
+        return;
+      }
+
       try {
         const data = await getSettings();
         setSettings(data);
@@ -42,7 +49,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     };
 
     fetchSettings();
-  }, [toast]);
+  }, [toast, isAuthenticated]);
 
   const updateSettings = useCallback(async (newSettings: Partial<Settings>) => {
     try {
