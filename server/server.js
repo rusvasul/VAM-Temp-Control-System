@@ -9,6 +9,7 @@ const debug = require('debug')('app:server');
 const connectDB = require('./config/database');
 const SSE = require('express-sse');
 const sse = new SSE();
+const AlarmMonitor = require('./services/alarmMonitor');
 
 // Models
 require('./models/TemperatureHistory');
@@ -24,6 +25,10 @@ const alarmRoutes = require('./routes/alarms');
 // Initialize express app
 const app = express();
 const port = process.env.PORT || 3000;
+
+// Make SSE instance available globally
+app.set('sse', sse);
+global.app = app;
 
 // Enable CORS with specific configuration
 app.use(cors({
@@ -87,7 +92,7 @@ const initializeServer = async () => {
     // 404 handler
     app.use((req, res) => {
       debug('Route not found:', req.originalUrl);
-      res.status(404).json({ 
+      res.status(404).json({
         error: 'Route not found',
         path: req.originalUrl
       });
@@ -99,9 +104,16 @@ const initializeServer = async () => {
       console.log(`Server is listening on port ${port}`);
     });
 
+    // Start the alarm monitor
+    const alarmMonitor = new AlarmMonitor();
+    app.set('alarmMonitor', alarmMonitor);  // Make it available to routes
+    alarmMonitor.start();
+    debug('Alarm monitor started');
+
     // Handle server shutdown gracefully
     process.on('SIGTERM', () => {
       debug('SIGTERM received. Shutting down gracefully...');
+      alarmMonitor.stop();
       server.close(() => {
         debug('Server closed');
         process.exit(0);
@@ -110,6 +122,7 @@ const initializeServer = async () => {
 
     process.on('SIGINT', () => {
       debug('SIGINT received. Shutting down gracefully...');
+      alarmMonitor.stop();
       server.close(() => {
         debug('Server closed');
         process.exit(0);
@@ -122,8 +135,5 @@ const initializeServer = async () => {
     process.exit(1);
   }
 };
-
-// Make SSE instance available globally
-app.set('sse', sse);
 
 initializeServer();

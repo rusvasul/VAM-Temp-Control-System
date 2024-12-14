@@ -13,7 +13,7 @@ router.post('/', async (req, res) => {
     res.status(201).json(alarm);
   } catch (error) {
     debug('Error creating alarm:', error);
-    res.status(400).json({ 
+    res.status(400).json({
       error: error.message,
       stack: error.stack
     });
@@ -29,7 +29,23 @@ router.get('/', async (req, res) => {
     res.json(alarms);
   } catch (error) {
     debug('Error fetching alarms:', error);
-    res.status(500).json({ 
+    res.status(500).json({
+      error: error.message,
+      stack: error.stack
+    });
+  }
+});
+
+// Get all active alarms
+router.get('/active', async (req, res) => {
+  try {
+    debug('Fetching all active alarms');
+    const activeAlarms = await Alarm.find({ isActive: true }).populate('tankId', 'name');
+    debug(`Found ${activeAlarms.length} active alarms`);
+    res.json(activeAlarms);
+  } catch (error) {
+    debug('Error fetching active alarms:', error);
+    res.status(500).json({
       error: error.message,
       stack: error.stack
     });
@@ -49,7 +65,7 @@ router.get('/:id', async (req, res) => {
     res.json(alarm);
   } catch (error) {
     debug('Error fetching alarm:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: error.message,
       stack: error.stack
     });
@@ -75,16 +91,16 @@ router.put('/:id', async (req, res) => {
     }
 
     const updatedAlarm = await Alarm.findByIdAndUpdate(
-      req.params.id, 
+      req.params.id,
       req.body,
       { new: true, runValidators: true }
     );
-    
+
     debug('Successfully updated alarm:', updatedAlarm._id);
     res.json(updatedAlarm);
   } catch (error) {
     debug('Error updating alarm:', error);
-    res.status(400).json({ 
+    res.status(400).json({
       error: error.message,
       stack: error.stack
     });
@@ -104,7 +120,7 @@ router.delete('/:id', async (req, res) => {
     res.json({ message: 'Alarm deleted successfully' });
   } catch (error) {
     debug('Error deleting alarm:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: error.message,
       stack: error.stack
     });

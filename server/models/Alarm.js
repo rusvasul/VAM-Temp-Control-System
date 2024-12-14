@@ -64,4 +64,30 @@ AlarmSchema.post('save', function(error, doc, next) {
   }
 });
 
+// Method to check and trigger alarm based on tank conditions
+AlarmSchema.methods.checkAndTrigger = async function(tank, systemStatus) {
+  const shouldTrigger = this.type === 'High Temperature' ?
+    tank.temperature > this.threshold :
+    this.type === 'Low Temperature' ?
+    tank.temperature < this.threshold :
+    false; // For 'System Error' type, we'll need to implement specific logic
+
+  try {
+    if (shouldTrigger && !this.isActive) {
+      this.isActive = true;
+      await this.save();
+      debug(`Alarm triggered: ${this.name} for tank ${tank.name} (Temperature: ${tank.temperature}°C, Threshold: ${this.threshold}°C)`);
+      // Here you could emit an SSE event or use another method to notify the frontend
+    } else if (!shouldTrigger && this.isActive) {
+      this.isActive = false;
+      await this.save();
+      debug(`Alarm cleared: ${this.name} for tank ${tank.name} (Temperature: ${tank.temperature}°C, Threshold: ${this.threshold}°C)`);
+      // Here you could emit an SSE event or use another method to notify the frontend
+    }
+  } catch (error) {
+    debug('Error in checkAndTrigger:', error);
+    throw new Error(`Failed to check/trigger alarm: ${error.message}`);
+  }
+};
+
 module.exports = mongoose.model('Alarm', AlarmSchema);

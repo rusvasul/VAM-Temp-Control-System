@@ -274,6 +274,12 @@ router.post('/:id/temperature', async (req, res) => {
     tank.temperature = temperature;
     await tank.save();
 
+    // Trigger immediate alarm check for this tank
+    const alarmMonitor = global.app.get('alarmMonitor');
+    if (alarmMonitor) {
+      await alarmMonitor.checkAlarms();
+    }
+
     debug('Temperature history recorded successfully:', temperatureHistory);
     res.status(201).json({
       id: temperatureHistory._id.toString(),
