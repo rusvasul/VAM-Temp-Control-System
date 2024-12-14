@@ -2,18 +2,18 @@ const mongoose = require('mongoose');
 const debug = require('debug')('app:models:alarm');
 
 const AlarmSchema = new mongoose.Schema({
-  name: { 
-    type: String, 
-    required: true, 
+  name: {
+    type: String,
+    required: true,
     trim: true
   },
-  type: { 
-    type: String, 
-    enum: ['High Temperature', 'Low Temperature', 'System Error'], 
-    required: true 
+  type: {
+    type: String,
+    enum: ['High Temperature', 'Low Temperature', 'System Error'],
+    required: true
   },
-  threshold: { 
-    type: Number, 
+  threshold: {
+    type: Number,
     required: true,
     validate: {
       validator: function(v) {
@@ -22,17 +22,17 @@ const AlarmSchema = new mongoose.Schema({
       message: 'Threshold must be a valid number'
     }
   },
-  tankId: { 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: 'Tank', 
-    required: true 
+  tankId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Tank',
+    required: true
   },
-  isActive: { 
-    type: Boolean, 
-    default: true 
+  isActive: {
+    type: Boolean,
+    default: true
   }
-}, { 
-  timestamps: true 
+}, {
+  timestamps: true
 });
 
 // Log alarm creation
