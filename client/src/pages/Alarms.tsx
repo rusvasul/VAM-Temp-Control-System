@@ -1,21 +1,56 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Bell, CheckCircle2, XCircle } from "lucide-react"
-import { Switch } from "@/components/ui/switch"
-import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Bell, CheckCircle2, XCircle } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { getAlarms } from '@/api/alarms';
+import { useToast } from "@/hooks/useToast";
 
-const mockAlarms = [
-  { id: 1, timestamp: "2024-01-15 15:30", type: "Temperature High", tank: 2, status: "Active" },
-  { id: 2, timestamp: "2024-01-15 14:45", type: "Valve Failure", tank: 5, status: "Resolved" },
-  { id: 3, timestamp: "2024-01-15 13:15", type: "Communication Error", tank: 7, status: "Active" },
-]
+interface Alarm {
+  _id: string;
+  name: string;
+  type: string;
+  threshold: number;
+  tankId: {
+    _id: string;
+    name: string;
+  };
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export function Alarms() {
+  const [alarms, setAlarms] = useState<Alarm[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchAlarms();
+  }, []);
+
+  const fetchAlarms = async () => {
+    try {
+      setIsLoading(true);
+      const data = await getAlarms();
+      setAlarms(data);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-4 p-8 pt-6">
       <h2 className="text-3xl font-bold tracking-tight">Alarms</h2>
-      
+
       <Card>
         <CardHeader>
           <CardTitle>Alarm Settings</CardTitle>
@@ -57,31 +92,37 @@ export function Alarms() {
           <CardTitle>Active Alarms</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {mockAlarms.map((alarm) => (
-              <div
-                key={alarm.id}
-                className="flex items-center justify-between p-4 border rounded-lg"
-              >
-                <div className="flex items-center space-x-4">
-                  <Bell className="h-5 w-5 text-red-500" />
-                  <div>
-                    <p className="font-medium">{alarm.type}</p>
-                    <p className="text-sm text-muted-foreground">
-                      Tank {alarm.tank} - {alarm.timestamp}
-                    </p>
-                  </div>
-                </div>
-                <Badge
-                  variant={alarm.status === "Active" ? "destructive" : "secondary"}
+          {isLoading ? (
+            <p>Loading alarms...</p>
+          ) : alarms.length === 0 ? (
+            <p>No active alarms</p>
+          ) : (
+            <div className="space-y-4">
+              {alarms.map((alarm) => (
+                <div
+                  key={alarm._id}
+                  className="flex items-center justify-between p-4 border rounded-lg"
                 >
-                  {alarm.status}
-                </Badge>
-              </div>
-            ))}
-          </div>
+                  <div className="flex items-center space-x-4">
+                    <Bell className="h-5 w-5 text-red-500" />
+                    <div>
+                      <p className="font-medium">{alarm.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Tank {alarm.tankId.name} - {new Date(alarm.createdAt).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                  <Badge
+                    variant={alarm.isActive ? "destructive" : "secondary"}
+                  >
+                    {alarm.isActive ? "Active" : "Resolved"}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
