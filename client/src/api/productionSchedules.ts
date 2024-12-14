@@ -8,6 +8,18 @@ export interface ProductionSchedule {
   endDate: string;
 }
 
+export const checkScheduleConflict = async (schedule: Partial<ProductionSchedule>): Promise<boolean> => {
+  try {
+    console.log('Checking for schedule conflicts', schedule);
+    const response = await api.post('/production-schedules/check-conflict', schedule);
+    console.log('Conflict check result:', response.data);
+    return response.data.hasConflict;
+  } catch (error) {
+    console.error('Error checking schedule conflict:', error);
+    throw new Error(error?.response?.data?.error || error.message);
+  }
+}
+
 export const createProductionSchedule = async (data: {
   tankId: string;
   beerStyle: string;

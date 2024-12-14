@@ -30,6 +30,11 @@ router.delete('/:id', (req, res) => {
   productionScheduleController.deleteSchedule(req, res);
 });
 
+// POST /api/production-schedules/check-conflict
+router.post('/check-conflict', (req, res) => {
+  productionScheduleController.checkConflict(req, res);
+});
+
 debug('Production schedule routes registered');
 
 module.exports = router;

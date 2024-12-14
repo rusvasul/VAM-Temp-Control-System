@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useState, useEffect } from "react"
 import { useManagerSettings } from "@/contexts/ManagerSettingsContext"
-import { createProductionSchedule, updateProductionSchedule, ProductionSchedule } from "@/api/productionSchedules"
+import { createProductionSchedule, updateProductionSchedule, checkScheduleConflict, ProductionSchedule } from "@/api/productionSchedules"
 import { useToast } from "@/hooks/useToast"
 
 interface ProductionScheduleDialogProps {
@@ -45,11 +45,21 @@ export function ProductionScheduleDialog({ isOpen, onClose, onSave, numberOfTank
 
   const handleSave = async () => {
     try {
+      const hasConflict = await checkScheduleConflict(schedule);
+      if (hasConflict) {
+        toast({
+          title: "Scheduling Conflict",
+          description: "This schedule conflicts with an existing schedule for the same tank.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       let savedSchedule: ProductionSchedule
       if (scheduleToEdit) {
         savedSchedule = await updateProductionSchedule(scheduleToEdit._id, schedule as ProductionSchedule)
         toast({
-          title: "Success", 
+          title: "Success",
           description: "Production schedule updated successfully",
         })
       } else {

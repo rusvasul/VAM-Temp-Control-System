@@ -1,9 +1,37 @@
 const ProductionSchedule = require('../models/ProductionSchedule');
 const debug = require('debug')('vam-tank-control:productionScheduleController');
 
+const checkScheduleConflict = async (schedule, excludeId = null) => {
+  const conflictingSchedule = await ProductionSchedule.findOne({
+    tankId: schedule.tankId,
+    $or: [
+      { startDate: { $lt: schedule.endDate }, endDate: { $gt: schedule.startDate } },
+      { startDate: { $gte: schedule.startDate, $lt: schedule.endDate } },
+      { endDate: { $gt: schedule.startDate, $lte: schedule.endDate } }
+    ],
+    _id: { $ne: excludeId }
+  });
+  return conflictingSchedule !== null;
+};
+
+exports.checkConflict = async (req, res) => {
+  try {
+    debug('Checking for schedule conflicts');
+    const hasConflict = await checkScheduleConflict(req.body);
+    res.json({ hasConflict });
+  } catch (error) {
+    debug('Error checking schedule conflict: %O', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 exports.createSchedule = async (req, res) => {
   try {
     debug('Creating new production schedule');
+    const hasConflict = await checkScheduleConflict(req.body);
+    if (hasConflict) {
+      return res.status(409).json({ error: 'Schedule conflicts with an existing schedule for the same tank' });
+    }
     const newSchedule = new ProductionSchedule(req.body);
     const savedSchedule = await newSchedule.save();
     debug('Successfully created production schedule with id: %s', savedSchedule._id);
@@ -49,6 +77,11 @@ exports.updateSchedule = async (req, res) => {
   try {
     const { id } = req.params;
     debug('Updating production schedule with id: %s', id);
+
+    const hasConflict = await checkScheduleConflict(req.body, id);
+    if (hasConflict) {
+      return res.status(409).json({ error: 'Schedule conflicts with an existing schedule for the same tank' });
+    }
 
     const updatedSchedule = await ProductionSchedule.findByIdAndUpdate(
       id,
