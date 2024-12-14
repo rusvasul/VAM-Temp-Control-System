@@ -36,7 +36,7 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
-    
+
     // Validate request body
     if (!email || !password) {
       logger.warn('Login attempt with missing credentials');
@@ -57,14 +57,14 @@ router.post('/login', async (req, res) => {
 
     // Generate JWT token
     const token = jwt.sign(
-      { userId: user._id }, 
-      process.env.SESSION_SECRET, 
+      { userId: user._id },
+      process.env.SESSION_SECRET,
       { expiresIn: '1h' }
     );
 
     logger.info(`User logged in successfully: ${email}`);
-    res.json({ 
-      token, 
+    res.json({
+      token,
       isAdmin: user.isAdmin || false,
       message: 'Login successful'
     });
@@ -78,19 +78,21 @@ router.post('/login', async (req, res) => {
 // Logout route
 router.post('/logout', (req, res) => {
   try {
-    if (req.headers.authorization) {
-      const token = req.headers.authorization.split(' ')[1];
-      if (token) {
-        logger.info('User logged out successfully');
-        res.json({ message: 'Logged out successfully' });
-      } else {
-        logger.warn('Logout attempt with invalid token format');
-        res.status(400).json({ error: 'Invalid token format' });
-      }
-    } else {
+    // Check for authorization header
+    if (!req.headers.authorization) {
       logger.info('Logout attempt with no token provided');
-      res.status(200).json({ message: 'No token to destroy' });
+      return res.status(200).json({ message: 'No token to invalidate' });
     }
+
+    // Validate token format
+    const [bearer, token] = req.headers.authorization.split(' ');
+    if (bearer !== 'Bearer' || !token) {
+      logger.warn('Logout attempt with invalid token format');
+      return res.status(400).json({ error: 'Invalid token format' });
+    }
+
+    logger.info('User logged out successfully');
+    res.json({ message: 'Logged out successfully' });
   } catch (error) {
     logger.error('Logout error:', error);
     logger.error('Stack trace:', error.stack);

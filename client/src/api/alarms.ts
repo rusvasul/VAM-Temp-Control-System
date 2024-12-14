@@ -1,4 +1,4 @@
-import api from './Api';
+import api from '../api/api';
 import { AxiosError } from 'axios';
 
 export interface Alarm {

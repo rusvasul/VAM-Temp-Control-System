@@ -11,14 +11,25 @@ import {
 import { useAuth } from "@/contexts/AuthContext"
 import { useNavigate } from "react-router-dom"
 import { User, Settings, LogOut } from "lucide-react"
+import { useToast } from "@/hooks/useToast"
 
 export function UserMenu() {
   const { logout, isAdmin } = useAuth()
   const navigate = useNavigate()
+  const { toast } = useToast()
 
-  const handleLogout = () => {
-    logout()
-    navigate("/login")
+  const handleLogout = async () => {
+    try {
+      await logout()
+      navigate("/login")
+    } catch (error) {
+      console.error("Logout error:", error)
+      toast({
+        title: "Logout Error",
+        description: error.message || "An error occurred during logout",
+        variant: "destructive",
+      })
+    }
   }
 
   return (
