@@ -11,7 +11,8 @@ import { Settings as SettingsType } from "@/api/settings"
 import { CleaningSchedules } from "@/components/CleaningSchedules"
 import { ProductionScheduleDialog } from "@/components/ProductionScheduleDialog"
 import { ProductionScheduleTable } from "@/components/ProductionScheduleTable"
-import { getProductionSchedules, ProductionSchedule } from "@/api/productionSchedules"
+import { getProductionSchedules, ProductionSchedule, deleteProductionSchedule } from "@/api/productionSchedules"
+import { ConfirmDialog } from "@/components/ConfirmDialog"
 
 export function Settings() {
   const { temperatureUnit, refreshRate, numberOfTanks, updateSettings, isLoading } = useSettings();
@@ -24,6 +25,8 @@ export function Settings() {
   const [isProductionScheduleDialogOpen, setIsProductionScheduleDialogOpen] = useState(false);
   const [productionSchedules, setProductionSchedules] = useState<ProductionSchedule[]>([]);
   const [scheduleToEdit, setScheduleToEdit] = useState<ProductionSchedule | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [scheduleToDelete, setScheduleToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     fetchProductionSchedules();
@@ -64,6 +67,32 @@ export function Settings() {
   const handleEditSchedule = (schedule: ProductionSchedule) => {
     setScheduleToEdit(schedule);
     setIsProductionScheduleDialogOpen(true);
+  };
+
+  const handleDeleteSchedule = (scheduleId: string) => {
+    setScheduleToDelete(scheduleId);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteSchedule = async () => {
+    if (scheduleToDelete) {
+      try {
+        await deleteProductionSchedule(scheduleToDelete);
+        setProductionSchedules(productionSchedules.filter(schedule => schedule._id !== scheduleToDelete));
+        toast({
+          title: "Success",
+          description: "Production schedule deleted successfully"
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to delete production schedule",
+          variant: "destructive"
+        });
+      }
+    }
+    setIsDeleteDialogOpen(false);
+    setScheduleToDelete(null);
   };
 
   return (
@@ -152,9 +181,10 @@ export function Settings() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <ProductionScheduleTable 
-            schedules={productionSchedules} 
+          <ProductionScheduleTable
+            schedules={productionSchedules}
             onEdit={handleEditSchedule}
+            onDelete={handleDeleteSchedule}
           />
         </CardContent>
       </Card>
@@ -173,6 +203,14 @@ export function Settings() {
         onSave={handleSaveSchedule}
         numberOfTanks={formData.numberOfTanks}
         scheduleToEdit={scheduleToEdit}
+      />
+
+      <ConfirmDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        onConfirm={confirmDeleteSchedule}
+        title="Delete Production Schedule"
+        description="Are you sure you want to delete this production schedule? This action cannot be undone."
       />
     </div>
   );

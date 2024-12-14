@@ -5,9 +5,10 @@ import { ProductionSchedule } from "@/api/productionSchedules"
 interface ProductionScheduleTableProps {
   schedules: ProductionSchedule[]
   onEdit: (schedule: ProductionSchedule) => void
+  onDelete: (scheduleId: string) => void
 }
 
-export function ProductionScheduleTable({ schedules, onEdit }: ProductionScheduleTableProps) {
+export function ProductionScheduleTable({ schedules, onEdit, onDelete }: ProductionScheduleTableProps) {
   return (
     <Table>
       <TableHeader>
@@ -27,8 +28,11 @@ export function ProductionScheduleTable({ schedules, onEdit }: ProductionSchedul
             <TableCell>{new Date(schedule.startDate).toLocaleDateString()}</TableCell>
             <TableCell>{new Date(schedule.endDate).toLocaleDateString()}</TableCell>
             <TableCell>
-              <Button variant="outline" size="sm" onClick={() => onEdit(schedule)}>
+              <Button variant="outline" size="sm" onClick={() => onEdit(schedule)} className="mr-2">
                 Edit
+              </Button>
+              <Button variant="destructive" size="sm" onClick={() => onDelete(schedule._id)}>
+                Delete
               </Button>
             </TableCell>
           </TableRow>
