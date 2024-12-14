@@ -12,14 +12,16 @@ const sse = new SSE();
 
 // Models
 require('./models/TemperatureHistory');
+require('./models/Alarm');
 
 // Routes
 const basicRoutes = require('./routes/index');
 const authRoutes = require('./routes/auth');
 const tankRoutes = require('./routes/tanks');
 const systemStatusRoutes = require('./routes/systemStatus');
+const alarmRoutes = require('./routes/alarms');
 
-// Initialize express app 
+// Initialize express app
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -68,6 +70,7 @@ const initializeServer = async () => {
     app.use('/api/auth', authRoutes);
     app.use('/api/tanks', tankRoutes);
     app.use('/api/system-status', systemStatusRoutes);
+    app.use('/api/alarms', alarmRoutes);
     debug('Routes mounted');
 
     // Error handling middleware
