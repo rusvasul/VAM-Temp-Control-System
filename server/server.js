@@ -15,6 +15,7 @@ const { authenticateWithToken, requireUser, requireAdmin } = require('./routes/m
 // Models
 require('./models/TemperatureHistory');
 require('./models/Alarm');
+require('./models/Settings');
 
 // Routes
 const basicRoutes = require('./routes/index');
@@ -22,6 +23,7 @@ const authRoutes = require('./routes/auth');
 const tankRoutes = require('./routes/tanks');
 const systemStatusRoutes = require('./routes/systemStatus');
 const alarmRoutes = require('./routes/alarms');
+const settingsRoutes = require('./routes/settings');
 
 // Initialize express app
 const app = express();
@@ -78,11 +80,28 @@ const initializeServer = async () => {
 
     // Apply authentication middleware for protected routes
     app.use('/api', authenticateWithToken);
-    
+
     // Protected routes requiring authentication
+    debug('Mounting protected routes');
     app.use('/api/tanks', requireUser, tankRoutes);
     app.use('/api/system-status', requireUser, systemStatusRoutes);
     app.use('/api/alarms', requireUser, alarmRoutes);
+    app.use('/api/settings', requireUser, settingsRoutes);
+    debug('Protected routes mounted');
+
+    // Log all registered routes
+    debug('Registered routes:');
+    app._router.stack.forEach(middleware => {
+      if (middleware.route) {
+        debug(`${Object.keys(middleware.route.methods)} ${middleware.route.path}`);
+      } else if (middleware.name === 'router') {
+        middleware.handle.stack.forEach(handler => {
+          if (handler.route) {
+            debug(`${Object.keys(handler.route.methods)} ${handler.route.path}`);
+          }
+        });
+      }
+    });
 
     // Admin-only routes
     app.use('/api/admin', requireUser, requireAdmin);
@@ -91,7 +110,7 @@ const initializeServer = async () => {
 
     // Error handling middleware
     app.use((err, req, res, next) => {
-      console.error('Error:', err.stack); // Log full error stack trace
+      console.error('Error:', err.stack);
       debug('Error occurred:', err);
       res.status(500).json({
         error: 'Internal server error',
@@ -103,6 +122,7 @@ const initializeServer = async () => {
     // 404 handler
     app.use((req, res) => {
       debug('Route not found:', req.originalUrl);
+      debug('Available routes:', app._router.stack.filter(r => r.route).map(r => r.route.path));
       res.status(404).json({
         error: 'Route not found',
         path: req.originalUrl
@@ -117,7 +137,7 @@ const initializeServer = async () => {
 
     // Start the alarm monitor
     const alarmMonitor = new AlarmMonitor();
-    app.set('alarmMonitor', alarmMonitor);  // Make it available to routes
+    app.set('alarmMonitor', alarmMonitor);
     alarmMonitor.start();
     debug('Alarm monitor started');
 

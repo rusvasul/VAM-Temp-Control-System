@@ -13,11 +13,9 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export interface AuthResponse {
-  data: {
-    message: string;
-    token?: string;
-    isAdmin?: boolean;
-  };
+  token: string;
+  isAdmin: boolean;
+  message: string;
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -53,7 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsAdmin(response.isAdmin || false);
         console.log("AuthContext: User logged in", { email, isAdmin: response.isAdmin });
       } else {
-        throw new Error(response.error || "Login failed");
+        throw new Error("Login failed: No token received");
       }
     } catch (error) {
       console.error("AuthContext: Error during login", error);
@@ -75,7 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsAdmin(response.isAdmin || false);
         console.log("AuthContext: User registered", { email, isAdmin: response.isAdmin });
       } else {
-        throw new Error(response.error || "Registration failed");
+        throw new Error("Registration failed: No token received");
       }
     } catch (error) {
       console.error("AuthContext: Error during registration", error);

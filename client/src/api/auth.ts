@@ -1,4 +1,4 @@
-import api from './api';
+import api from '@/api/api';
 import type { AuthResponse } from "@/contexts/AuthContext";
 
 // Login
@@ -15,7 +15,7 @@ export const login = async (email: string, password: string): Promise<AuthRespon
     return response.data;
   } catch (error) {
     console.error('Login error:', error);
-    throw new Error(error?.response?.data?.error || error.message);
+    throw error?.response?.data?.error || error.message;
   }
 };
 
@@ -33,22 +33,21 @@ export const register = async (data: { email: string; password: string }): Promi
     return response.data;
   } catch (error) {
     console.error('Registration error:', error);
-    throw error;
+    throw error?.response?.data?.error || error.message;
   }
 };
 
 // Logout
 // POST /auth/logout
 // Response: { message: string }
-export const logout = async (): Promise<{ data: { message: string } }> => {
+export const logout = async (): Promise<void> => {
   try {
-    const response = await api.post('/auth/logout');
+    await api.post('/auth/logout');
     localStorage.removeItem('token');
     localStorage.removeItem('isAdmin');
     console.log('Logout successful');
-    return response;
   } catch (error) {
     console.error('Logout error:', error);
-    throw error;
+    throw error?.response?.data?.error || error.message;
   }
 };

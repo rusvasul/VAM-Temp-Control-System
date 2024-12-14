@@ -1,50 +1,76 @@
-import { createContext, useContext, useState, ReactNode, useCallback } from "react";
+import { createContext, useContext, useState, ReactNode, useCallback, useEffect } from "react";
+import { getSettings, updateSettings as apiUpdateSettings, Settings } from "@/api/settings";
+import { useToast } from "@/hooks/useToast";
 
 type SettingsContextType = {
-  temperatureUnit: string;
+  temperatureUnit: 'celsius' | 'fahrenheit';
   refreshRate: number;
-  autoMode: boolean;
-  minTemp: number;
-  maxTemp: number;
-  valveMode: string;
   numberOfTanks: number;
-  updateSettings: (settings: Partial<SettingsState>) => void;
+  isLoading: boolean;
+  updateSettings: (settings: Partial<Settings>) => Promise<void>;
 };
 
-type SettingsState = {
-  temperatureUnit: string;
-  refreshRate: number;
-  autoMode: boolean;
-  minTemp: number;
-  maxTemp: number;
-  valveMode: string;
-  numberOfTanks: number;
+const defaultSettings: Settings = {
+  temperatureUnit: 'fahrenheit',
+  refreshRate: 30,
+  numberOfTanks: 9,
 };
 
 const SettingsContext = createContext<SettingsContextType | null>(null);
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
-  const [settings, setSettings] = useState<SettingsState>({
-    temperatureUnit: "fahrenheit",
-    refreshRate: 30,
-    autoMode: true,
-    minTemp: 60,
-    maxTemp: 75,
-    valveMode: "automatic",
-    numberOfTanks: 9,
-  });
+  const [settings, setSettings] = useState<Settings>(defaultSettings);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
 
-  const updateSettings = useCallback((newSettings: Partial<SettingsState>) => {
-    setSettings(prev => {
-      const updated = { ...prev, ...newSettings };
-      // Persist settings to localStorage
-      localStorage.setItem('tankSettings', JSON.stringify(updated));
-      return updated;
-    });
-  }, []);
+  // Fetch settings on mount
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const data = await getSettings();
+        setSettings(data);
+      } catch (error) {
+        console.error('Failed to fetch settings:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load settings",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSettings();
+  }, [toast]);
+
+  const updateSettings = useCallback(async (newSettings: Partial<Settings>) => {
+    try {
+      const updatedSettings = await apiUpdateSettings(newSettings);
+      setSettings(updatedSettings);
+      toast({
+        title: "Success",
+        description: "Settings updated successfully",
+      });
+    } catch (error) {
+      console.error('Failed to update settings:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update settings",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  }, [toast]);
 
   return (
-    <SettingsContext.Provider value={{ ...settings, updateSettings }}>
+    <SettingsContext.Provider 
+      value={{ 
+        ...settings, 
+        isLoading,
+        updateSettings 
+      }}
+    >
       {children}
     </SettingsContext.Provider>
   );

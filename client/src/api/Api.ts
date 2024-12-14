@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:3000/api',
+  baseURL: 'http://localhost:3001/api',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -14,8 +14,11 @@ api.interceptors.request.use(request => {
   if (token) {
     request.headers.Authorization = `Bearer ${token}`;
   }
-  console.log('Starting Request:', request.method, request.url);
+  console.log('Starting Request:', request.method, request.url, request.headers);
   return request;
+}, error => {
+  console.error('Request Error:', error);
+  return Promise.reject(error);
 });
 
 // Add response interceptor for debugging
@@ -29,16 +32,17 @@ api.interceptors.response.use(
     if (error.response) {
       console.error('Error Data:', error.response.data);
       console.error('Error Status:', error.response.status);
-      
+
       // Handle authentication errors
       if (error.response.status === 401) {
+        console.log('Authentication error - redirecting to login');
         localStorage.removeItem('token');
         localStorage.removeItem('isAdmin');
         window.location.href = '/login';
       }
     }
-    return Promise.reject(error);
+    return Promise.reject(error?.response?.data?.error || error.message);
   }
 );
 
-export default api; 
+export default api;
