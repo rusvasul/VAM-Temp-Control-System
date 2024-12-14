@@ -5,6 +5,8 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useState } from "react"
 import { useManagerSettings } from "@/contexts/ManagerSettingsContext"
+import { createProductionSchedule } from "@/api/productionSchedules"
+import { useToast } from "@/hooks/useToast"
 
 interface ProductionScheduleDialogProps {
   isOpen: boolean
@@ -20,6 +22,7 @@ interface ProductionScheduleDialogProps {
 
 export function ProductionScheduleDialog({ isOpen, onClose, onSave, numberOfTanks }: ProductionScheduleDialogProps) {
   const { settings } = useManagerSettings()
+  const { toast } = useToast()
   const [schedule, setSchedule] = useState({
     tankId: "1",
     beerStyle: settings.beerStyles[0]?.name || '',
@@ -27,9 +30,22 @@ export function ProductionScheduleDialog({ isOpen, onClose, onSave, numberOfTank
     endDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
   })
 
-  const handleSave = () => {
-    onSave(schedule)
-    onClose()
+  const handleSave = async () => {
+    try {
+      const newSchedule = await createProductionSchedule(schedule);
+      onSave(newSchedule);
+      onClose();
+      toast({
+        title: "Success",
+        description: "Production schedule created successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   }
 
   return (

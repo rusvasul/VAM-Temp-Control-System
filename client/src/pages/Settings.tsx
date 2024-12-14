@@ -9,6 +9,7 @@ import { Save, Loader2 } from "lucide-react"
 import { useState } from "react"
 import { Settings as SettingsType } from "@/api/settings"
 import { CleaningSchedules } from "@/components/CleaningSchedules"
+import { ProductionScheduleDialog } from "@/components/ProductionScheduleDialog"
 
 export function Settings() {
   const { temperatureUnit, refreshRate, numberOfTanks, updateSettings, isLoading } = useSettings();
@@ -18,6 +19,7 @@ export function Settings() {
     refreshRate,
     numberOfTanks
   });
+  const [isProductionScheduleDialogOpen, setIsProductionScheduleDialogOpen] = useState(false);
 
   const handleSubmit = async () => {
     try {
@@ -25,6 +27,10 @@ export function Settings() {
     } catch (error) {
       console.error('Error updating settings:', error);
     }
+  };
+
+  const handleAddProductionSchedule = (newSchedule) => {
+    console.log("New production schedule added:", newSchedule);
   };
 
   return (
@@ -103,10 +109,28 @@ export function Settings() {
         </CardContent>
       </Card>
 
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-xl font-semibold flex items-center justify-between">
+            Production Schedules
+            <Button onClick={() => setIsProductionScheduleDialogOpen(true)}>
+              Add Production Schedule
+            </Button>
+          </CardTitle>
+        </CardHeader>
+      </Card>
+
       <CleaningSchedules tanks={Array.from({ length: formData.numberOfTanks }, (_, i) => ({
         id: (i + 1).toString(),
         name: `Tank ${i + 1}`
       }))} />
+
+      <ProductionScheduleDialog
+        isOpen={isProductionScheduleDialogOpen}
+        onClose={() => setIsProductionScheduleDialogOpen(false)}
+        onSave={handleAddProductionSchedule}
+        numberOfTanks={formData.numberOfTanks}
+      />
     </div>
   );
 }
