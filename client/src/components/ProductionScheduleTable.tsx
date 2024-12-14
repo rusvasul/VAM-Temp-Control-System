@@ -1,11 +1,13 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Button } from "@/components/ui/button"
 import { ProductionSchedule } from "@/api/productionSchedules"
 
 interface ProductionScheduleTableProps {
   schedules: ProductionSchedule[]
+  onEdit: (schedule: ProductionSchedule) => void
 }
 
-export function ProductionScheduleTable({ schedules }: ProductionScheduleTableProps) {
+export function ProductionScheduleTable({ schedules, onEdit }: ProductionScheduleTableProps) {
   return (
     <Table>
       <TableHeader>
@@ -14,6 +16,7 @@ export function ProductionScheduleTable({ schedules }: ProductionScheduleTablePr
           <TableHead>Beer Style</TableHead>
           <TableHead>Start Date</TableHead>
           <TableHead>End Date</TableHead>
+          <TableHead>Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -23,6 +26,11 @@ export function ProductionScheduleTable({ schedules }: ProductionScheduleTablePr
             <TableCell>{schedule.beerStyle}</TableCell>
             <TableCell>{new Date(schedule.startDate).toLocaleDateString()}</TableCell>
             <TableCell>{new Date(schedule.endDate).toLocaleDateString()}</TableCell>
+            <TableCell>
+              <Button variant="outline" size="sm" onClick={() => onEdit(schedule)}>
+                Edit
+              </Button>
+            </TableCell>
           </TableRow>
         ))}
       </TableBody>

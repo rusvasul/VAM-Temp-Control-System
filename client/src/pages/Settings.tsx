@@ -23,6 +23,7 @@ export function Settings() {
   });
   const [isProductionScheduleDialogOpen, setIsProductionScheduleDialogOpen] = useState(false);
   const [productionSchedules, setProductionSchedules] = useState<ProductionSchedule[]>([]);
+  const [scheduleToEdit, setScheduleToEdit] = useState<ProductionSchedule | null>(null);
 
   useEffect(() => {
     fetchProductionSchedules();
@@ -49,8 +50,20 @@ export function Settings() {
     }
   };
 
-  const handleAddProductionSchedule = (newSchedule) => {
-    console.log("New production schedule added:", newSchedule);
+  const handleSaveSchedule = (savedSchedule: ProductionSchedule) => {
+    if (scheduleToEdit) {
+      setProductionSchedules(productionSchedules.map(schedule =>
+        schedule._id === savedSchedule._id ? savedSchedule : schedule
+      ));
+    } else {
+      setProductionSchedules([...productionSchedules, savedSchedule]);
+    }
+    setScheduleToEdit(null);
+  };
+
+  const handleEditSchedule = (schedule: ProductionSchedule) => {
+    setScheduleToEdit(schedule);
+    setIsProductionScheduleDialogOpen(true);
   };
 
   return (
@@ -139,7 +152,10 @@ export function Settings() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <ProductionScheduleTable schedules={productionSchedules} />
+          <ProductionScheduleTable 
+            schedules={productionSchedules} 
+            onEdit={handleEditSchedule}
+          />
         </CardContent>
       </Card>
 
@@ -150,9 +166,13 @@ export function Settings() {
 
       <ProductionScheduleDialog
         isOpen={isProductionScheduleDialogOpen}
-        onClose={() => setIsProductionScheduleDialogOpen(false)}
-        onSave={handleAddProductionSchedule}
+        onClose={() => {
+          setIsProductionScheduleDialogOpen(false);
+          setScheduleToEdit(null);
+        }}
+        onSave={handleSaveSchedule}
         numberOfTanks={formData.numberOfTanks}
+        scheduleToEdit={scheduleToEdit}
       />
     </div>
   );
