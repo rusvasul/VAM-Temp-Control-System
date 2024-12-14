@@ -6,10 +6,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useSettings } from "@/contexts/SettingsContext"
 import { useToast } from "@/hooks/useToast"
 import { Save, Loader2 } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Settings as SettingsType } from "@/api/settings"
 import { CleaningSchedules } from "@/components/CleaningSchedules"
 import { ProductionScheduleDialog } from "@/components/ProductionScheduleDialog"
+import { ProductionScheduleTable } from "@/components/ProductionScheduleTable"
+import { getProductionSchedules, ProductionSchedule } from "@/api/productionSchedules"
 
 export function Settings() {
   const { temperatureUnit, refreshRate, numberOfTanks, updateSettings, isLoading } = useSettings();
@@ -20,6 +22,24 @@ export function Settings() {
     numberOfTanks
   });
   const [isProductionScheduleDialogOpen, setIsProductionScheduleDialogOpen] = useState(false);
+  const [productionSchedules, setProductionSchedules] = useState<ProductionSchedule[]>([]);
+
+  useEffect(() => {
+    fetchProductionSchedules();
+  }, []);
+
+  const fetchProductionSchedules = async () => {
+    try {
+      const schedules = await getProductionSchedules();
+      setProductionSchedules(schedules);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to fetch production schedules: " + error.message,
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleSubmit = async () => {
     try {
@@ -118,6 +138,9 @@ export function Settings() {
             </Button>
           </CardTitle>
         </CardHeader>
+        <CardContent>
+          <ProductionScheduleTable schedules={productionSchedules} />
+        </CardContent>
       </Card>
 
       <CleaningSchedules tanks={Array.from({ length: formData.numberOfTanks }, (_, i) => ({
