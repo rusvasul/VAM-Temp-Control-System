@@ -46,14 +46,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     try {
       const response = await apiLogin(email, password);
-      if (response.data?.token) {
-        localStorage.setItem("token", response.data.token);
-        localStorage.setItem("isAdmin", String(response.data.isAdmin || false));
+      if (response.token) {
+        localStorage.setItem("token", response.token);
+        localStorage.setItem("isAdmin", String(response.isAdmin || false));
         setIsAuthenticated(true);
-        setIsAdmin(response.data.isAdmin || false);
-        console.log("AuthContext: User logged in", { email, isAdmin: response.data.isAdmin });
+        setIsAdmin(response.isAdmin || false);
+        console.log("AuthContext: User logged in", { email, isAdmin: response.isAdmin });
       } else {
-        throw new Error(response.data?.message || "Login failed");
+        throw new Error(response.error || "Login failed");
       }
     } catch (error) {
       console.error("AuthContext: Error during login", error);
@@ -75,7 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsAdmin(response.isAdmin || false);
         console.log("AuthContext: User registered", { email, isAdmin: response.isAdmin });
       } else {
-        throw new Error(response.message || "Registration failed");
+        throw new Error(response.error || "Registration failed");
       }
     } catch (error) {
       console.error("AuthContext: Error during registration", error);

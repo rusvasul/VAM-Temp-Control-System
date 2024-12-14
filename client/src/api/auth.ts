@@ -4,7 +4,7 @@ import type { AuthResponse } from "@/contexts/AuthContext";
 // Login
 // POST /auth/login
 // Request: { email: string, password: string }
-// Response: { message: string, token: string, isAdmin: boolean }
+// Response: { token: string, isAdmin: boolean }
 export const login = async (email: string, password: string): Promise<AuthResponse> => {
   try {
     const response = await api.post('/auth/login', { email, password });
@@ -15,7 +15,7 @@ export const login = async (email: string, password: string): Promise<AuthRespon
     return response.data;
   } catch (error) {
     console.error('Login error:', error);
-    throw error;
+    throw new Error(error?.response?.data?.error || error.message);
   }
 };
 

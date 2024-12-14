@@ -67,12 +67,12 @@ const initializeServer = async () => {
     );
 
     // SSE endpoints
-    app.get('/api/sse', sse.init);
-    app.get('/api/events', sse.init);
+    app.get('/sse', sse.init);
+    app.get('/events', sse.init);
     debug('SSE endpoints initialized');
 
     // Routes
-    app.use('/api', basicRoutes);
+    app.use('/', basicRoutes);
     app.use('/api/auth', authRoutes);
     app.use('/api/tanks', tankRoutes);
     app.use('/api/system-status', systemStatusRoutes);

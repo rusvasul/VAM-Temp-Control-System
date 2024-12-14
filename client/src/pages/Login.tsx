@@ -28,12 +28,14 @@ export function Login() {
     try {
       setLoading(true)
       await login(data.email, data.password)
+      console.log('Login successful for user:', data.email)
       toast({
         title: "Success",
         description: "Logged in successfully",
       })
       navigate("/")
     } catch (error) {
+      console.error('Login error:', error)
       toast({
         variant: "destructive",
         title: "Error",
@@ -64,7 +66,13 @@ export function Login() {
                 type="email"
                 placeholder="Enter your email"
                 autoComplete="email"
-                {...register("email", { required: "Email is required" })}
+                {...register("email", { 
+                  required: "Email is required",
+                  pattern: {
+                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                    message: "Invalid email address"
+                  }
+                })}
               />
               {errors.email && <p className="text-red-500 text-xs italic">{errors.email.message}</p>}
             </div>
@@ -76,7 +84,13 @@ export function Login() {
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
                   autoComplete="current-password"
-                  {...register("password", { required: "Password is required" })}
+                  {...register("password", { 
+                    required: "Password is required",
+                    minLength: {
+                      value: 6,
+                      message: "Password must be at least 6 characters"
+                    }
+                  })}
                 />
                 <Button
                   type="button"

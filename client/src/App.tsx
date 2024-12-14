@@ -15,6 +15,7 @@ import { Admin } from "./pages/Admin"
 import { Layout } from "./components/Layout"
 import { ProtectedRoute } from "./components/ProtectedRoute"
 import { Sidebar } from "./components/Sidebar"
+import { Header } from "./components/Header"
 import { useEffect } from "react"
 
 function App() {
@@ -31,7 +32,6 @@ function App() {
         <SettingsProvider>
           <ManagerSettingsProvider>
             <Router>
-              {console.log("Current route:", window.location.pathname)}
               <Routes>
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
@@ -40,12 +40,17 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <div className="h-full relative">
-                        <div className="hidden h-full md:flex md:w-72 md:flex-col md:fixed md:inset-y-0 z-80 bg-background border-r">
-                          <Sidebar />
+                        <div className="z-50 relative">
+                          <Header />
                         </div>
-                        <main className="md:pl-72 min-h-screen">
-                          <Layout />
-                        </main>
+                        <div className="flex h-full pt-16">
+                          <div className="hidden h-full md:flex md:w-72 md:flex-col md:fixed md:inset-y-16 z-40 bg-background border-r">
+                            <Sidebar />
+                          </div>
+                          <main className="flex-1 md:pl-72">
+                            <Layout />
+                          </main>
+                        </div>
                       </div>
                     </ProtectedRoute>
                   }
