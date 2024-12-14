@@ -66,9 +66,10 @@ const initializeServer = async () => {
       })
     );
 
-    // SSE endpoint
+    // SSE endpoints
     app.get('/api/sse', sse.init);
-    debug('SSE endpoint initialized');
+    app.get('/api/events', sse.init);
+    debug('SSE endpoints initialized');
 
     // Routes
     app.use('/api', basicRoutes);

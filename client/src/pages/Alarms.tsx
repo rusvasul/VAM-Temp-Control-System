@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { getAlarms, createAlarm } from '@/api/alarms';
 import { useToast } from "@/hooks/useToast";
 import { AlarmForm } from '@/components/AlarmForm';
+import { AlarmNotification } from '@/components/AlarmNotification';
 
 interface Alarm {
   _id: string;
@@ -23,13 +24,36 @@ interface Alarm {
   updatedAt: string;
 }
 
+interface AlarmNotificationData {
+  alarm: {
+    id: string;
+    name: string;
+    tankName: string;
+    temperature: number;
+    threshold: number;
+    timestamp: string;
+  };
+  type: 'ALARM_TRIGGERED' | 'ALARM_CLEARED';
+}
+
 export function Alarms() {
   const [alarms, setAlarms] = useState<Alarm[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [notification, setNotification] = useState<AlarmNotificationData | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchAlarms();
+    const eventSource = new EventSource('/api/events');
+
+    eventSource.addEventListener('alarm-update', (event) => {
+      const data = JSON.parse(event.data);
+      handleAlarmUpdate(data);
+    });
+
+    return () => {
+      eventSource.close();
+    };
   }, []);
 
   const fetchAlarms = async () => {
@@ -45,6 +69,13 @@ export function Alarms() {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleAlarmUpdate = (data: any) => {
+    if (data.type === 'ALARM_TRIGGERED' || data.type === 'ALARM_CLEARED') {
+      fetchAlarms();
+      setNotification(data);
     }
   };
 
@@ -67,6 +98,13 @@ export function Alarms() {
 
   return (
     <div className="space-y-4 p-8 pt-6">
+      {notification && (
+        <AlarmNotification 
+          alarm={notification.alarm} 
+          type={notification.type} 
+        />
+      )}
+
       <h2 className="text-3xl font-bold tracking-tight">Alarms</h2>
 
       <AlarmForm onSubmit={handleCreateAlarm} />

@@ -59,7 +59,7 @@ class AlarmMonitor {
       if (shouldTrigger !== wasActive) {
         alarm.isActive = shouldTrigger;
         await alarm.save();
-        
+
         const sse = global.app.get('sse');
         if (sse) {
           sse.send({
@@ -75,7 +75,7 @@ class AlarmMonitor {
             }
           }, 'alarm-update');
         }
-        
+
         debug(`Alarm ${alarm.name} for tank ${tank.name} ${shouldTrigger ? 'triggered' : 'cleared'} (Temperature: ${tank.temperature}°F)`);
       }
     } catch (error) {
@@ -88,13 +88,13 @@ class AlarmMonitor {
     switch (alarm.type) {
       case 'High Temperature':
         return tank.temperature > alarm.threshold;
-      
+
       case 'Low Temperature':
         return tank.temperature < alarm.threshold;
-      
+
       case 'System Error':
         return this.checkSystemError(tank, systemStatus);
-      
+
       default:
         debug(`Unknown alarm type: ${alarm.type}`);
         return false;
