@@ -24,34 +24,31 @@ export const login = async (email: string, password: string): Promise<AuthRespon
 // Request: { email: string, password: string }
 // Response: { message: string, token: string, isAdmin: boolean }
 export const register = async (data: { email: string; password: string }): Promise<AuthResponse> => {
-  // Mocking the response
-  return new Promise<AuthResponse>((resolve) => {
-    setTimeout(() => {
-      resolve({
-        data: {
-          message: 'User created successfully',
-          token: 'mock-jwt-token',
-          isAdmin: false // New users are not admins by default
-        }
-      });
-    }, 500);
-  });
-  // return api.post('/auth/register', data);
+  try {
+    const response = await api.post('/auth/register', data);
+    if (response.data.token) {
+      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('isAdmin', String(response.data.isAdmin || false));
+    }
+    return response.data;
+  } catch (error) {
+    console.error('Registration error:', error);
+    throw error;
+  }
 };
 
 // Logout
 // POST /auth/logout
 // Response: { message: string }
 export const logout = async (): Promise<{ data: { message: string } }> => {
-  // Mocking the response
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        data: {
-          message: 'Logged out successfully'
-        }
-      });
-    }, 500);
-  });
-  // return api.post('/auth/logout');
+  try {
+    const response = await api.post('/auth/logout');
+    localStorage.removeItem('token');
+    localStorage.removeItem('isAdmin');
+    console.log('Logout successful');
+    return response;
+  } catch (error) {
+    console.error('Logout error:', error);
+    throw error;
+  }
 };

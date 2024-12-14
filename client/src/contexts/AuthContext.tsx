@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
-import { login as apiLogin, register as apiRegister } from "@/api/auth";
+import { login as apiLogin, register as apiRegister, logout as apiLogout } from "@/api/auth";
 
 type AuthContextType = {
   isAuthenticated: boolean;
@@ -67,15 +67,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (email: string, password: string) => {
     try {
-      const response = await apiRegister({ email, password }) as AuthResponse;
-      if (response.data?.token) {
-        localStorage.setItem("token", response.data.token);
-        localStorage.setItem("isAdmin", String(response.data.isAdmin || false));
+      const response = await apiRegister({ email, password });
+      if (response.token) {
+        localStorage.setItem("token", response.token);
+        localStorage.setItem("isAdmin", String(response.isAdmin || false));
         setIsAuthenticated(true);
-        setIsAdmin(response.data.isAdmin || false);
-        console.log("AuthContext: User registered", { email, isAdmin: response.data.isAdmin });
+        setIsAdmin(response.isAdmin || false);
+        console.log("AuthContext: User registered", { email, isAdmin: response.isAdmin });
       } else {
-        throw new Error(response.data?.message || "Registration failed");
+        throw new Error(response.message || "Registration failed");
       }
     } catch (error) {
       console.error("AuthContext: Error during registration", error);
