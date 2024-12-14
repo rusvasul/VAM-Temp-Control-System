@@ -115,6 +115,32 @@ export const getTemperatureHistory = async (tankId: string, startDate?: string, 
   }
 };
 
+// Subscribe to real-time temperature updates
+export const subscribeToTemperatureUpdates = (tankId: string, callback: (data: { temperature: number, timestamp: string }) => void) => {
+  console.log(`Subscribing to temperature updates for tank ${tankId}`);
+  const eventSource = new EventSource(`${api.defaults.baseURL}/tanks/${tankId}/temperature-stream`);
+
+  eventSource.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data);
+      console.log(`Received temperature update for tank ${tankId}:`, data);
+      callback(data);
+    } catch (error) {
+      console.error('Error processing temperature update:', error);
+    }
+  };
+
+  eventSource.onerror = (error) => {
+    console.error('EventSource failed:', error);
+    eventSource.close();
+  };
+
+  return () => {
+    console.log(`Unsubscribing from temperature updates for tank ${tankId}`);
+    eventSource.close();
+  };
+};
+
 // Get Detailed Tank Data
 export const getDetailedTankData = async (tankId: string): Promise<Tank> => {
   try {

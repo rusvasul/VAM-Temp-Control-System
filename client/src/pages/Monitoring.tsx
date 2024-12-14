@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-import { getTanks, getDetailedTankData, getTemperatureHistory } from "@/api/tanks"
+import { getTanks, getDetailedTankData, getTemperatureHistory, subscribeToTemperatureUpdates } from "@/api/tanks"
 import { ThermometerIcon, AlertCircle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { TankDialog } from "@/components/TankDialog"
@@ -51,39 +51,27 @@ export function Monitoring() {
           getDetailedTankData(selectedTank.id),
           getTemperatureHistory(selectedTank.id)
         ])
-        
+
         setDetailedTankData(detailedData)
         setTempHistory(historyData)
 
-        // Set up SSE for real-time temperature updates
-        const eventSource = new EventSource(`http://localhost:3000/api/tanks/${selectedTank.id}/temperature-stream`)
-
-        eventSource.onmessage = (event) => {
-          try {
-            const data = JSON.parse(event.data)
-            setDetailedTankData(prevData => prevData ? {
-              ...prevData,
-              temperature: data.temperature
-            } : null)
-            setTempHistory(prevHistory => prevHistory ? {
-              ...prevHistory,
-              history: [
-                ...prevHistory.history,
-                { timestamp: new Date().toISOString(), temperature: data.temperature }
-              ]
-            } : null)
-          } catch (error) {
-            console.error('Error processing temperature update:', error)
-          }
-        }
-
-        eventSource.onerror = () => {
-          console.error('EventSource failed')
-          eventSource.close()
-        }
+        // Subscribe to real-time temperature updates
+        const unsubscribe = subscribeToTemperatureUpdates(selectedTank.id, (data) => {
+          setDetailedTankData(prevData => prevData ? {
+            ...prevData,
+            temperature: data.temperature
+          } : null)
+          setTempHistory(prevHistory => prevHistory ? {
+            ...prevHistory,
+            history: [
+              ...prevHistory.history,
+              { temperature: data.temperature, timestamp: data.timestamp }
+            ]
+          } : null)
+        })
 
         return () => {
-          eventSource.close()
+          unsubscribe()
         }
       } catch (error) {
         console.error('Error fetching tank data:', error)

@@ -137,15 +137,23 @@ router.get('/:id/temperature-stream', async (req, res) => {
       if (mongoose.Types.ObjectId.isValid(id)) {
         tank = await Tank.findById(id).lean();
       } else {
-        // Look up tank directly by name
         debug(`Looking for tank with name: ${id}`);
         tank = await Tank.findOne({ name: id }).lean();
       }
 
       if (tank) {
-        const data = JSON.stringify({ temperature: tank.temperature });
-        debug(`Sending temperature update for tank ${id}:`, data);
-        res.write(`data: ${data}\n\n`);
+        const latestTemperature = await TemperatureHistory.findOne({ tankId: tank._id })
+          .sort({ timestamp: -1 })
+          .lean();
+
+        if (latestTemperature) {
+          const data = JSON.stringify({
+            temperature: latestTemperature.temperature,
+            timestamp: latestTemperature.timestamp
+          });
+          debug(`Sending temperature update for tank ${id}:`, data);
+          res.write(`data: ${data}\n\n`);
+        }
       }
     } catch (error) {
       debug(`Error fetching tank temperature: ${error.message}`);
