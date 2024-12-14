@@ -6,21 +6,18 @@ import { getTanks, getDetailedTankData, getTemperatureHistory } from "@/api/tank
 import { ThermometerIcon, AlertCircle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { TankDialog } from "@/components/TankDialog"
-import type { Tank } from "@/api/tanks"
-
-interface TemperatureData {
-  timestamp: string;
-  temperature: number;
-}
+import type { Tank, TemperatureHistory } from "@/api/tanks"
+import { useToast } from "@/hooks/useToast"
 
 export function Monitoring() {
   const [tanks, setTanks] = useState<Tank[]>([])
   const [selectedTank, setSelectedTank] = useState<Tank | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [detailedTankData, setDetailedTankData] = useState<Tank | null>(null)
-  const [tempHistory, setTempHistory] = useState<TemperatureData[]>([])
+  const [tempHistory, setTempHistory] = useState<TemperatureHistory | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const { toast } = useToast()
 
   // Fetch initial tanks data
   useEffect(() => {
@@ -43,17 +40,20 @@ export function Monitoring() {
     fetchData()
   }, [])
 
-  // Fetch detailed tank data when a tank is selected
+  // Fetch detailed tank data and temperature history when a tank is selected
   useEffect(() => {
     if (!selectedTank) return;
 
     const fetchDetailedData = async () => {
       try {
         setError(null)
-        const detailedData = await getDetailedTankData(selectedTank.id)
+        const [detailedData, historyData] = await Promise.all([
+          getDetailedTankData(selectedTank.id),
+          getTemperatureHistory(selectedTank.id)
+        ])
+        
         setDetailedTankData(detailedData)
-        const historyData = await getTemperatureHistory(selectedTank.id)
-        setTempHistory(historyData.history)
+        setTempHistory(historyData)
 
         // Set up SSE for real-time temperature updates
         const eventSource = new EventSource(`http://localhost:3000/api/tanks/${selectedTank.id}/temperature-stream`)
@@ -65,10 +65,13 @@ export function Monitoring() {
               ...prevData,
               temperature: data.temperature
             } : null)
-            setTempHistory(prevHistory => [
+            setTempHistory(prevHistory => prevHistory ? {
               ...prevHistory,
-              { timestamp: new Date().toISOString(), temperature: data.temperature }
-            ])
+              history: [
+                ...prevHistory.history,
+                { timestamp: new Date().toISOString(), temperature: data.temperature }
+              ]
+            } : null)
           } catch (error) {
             console.error('Error processing temperature update:', error)
           }
@@ -83,13 +86,18 @@ export function Monitoring() {
           eventSource.close()
         }
       } catch (error) {
-        console.error('Error fetching detailed tank data:', error)
+        console.error('Error fetching tank data:', error)
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        })
         setError('Failed to fetch tank details')
       }
     }
 
     fetchDetailedData()
-  }, [selectedTank])
+  }, [selectedTank, toast])
 
   const handleTankClick = (tank: Tank) => {
     setSelectedTank(tank)
@@ -102,7 +110,6 @@ export function Monitoring() {
   }
 
   const handleTankUpdate = async () => {
-    // Refresh the tanks data
     try {
       const tanksData = await getTanks()
       setTanks(tanksData)
@@ -157,7 +164,7 @@ export function Monitoring() {
             </TabsTrigger>
           ))}
         </TabsList>
-        {detailedTankData && (
+        {detailedTankData && tempHistory && (
           <TabsContent value={selectedTank ? selectedTank.id : ""}>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
               <Card className="lg:col-span-4">
@@ -166,7 +173,7 @@ export function Monitoring() {
                 </CardHeader>
                 <CardContent className="h-[400px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={tempHistory}>
+                    <LineChart data={tempHistory.history}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis
                         dataKey="timestamp"

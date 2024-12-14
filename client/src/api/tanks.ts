@@ -11,10 +11,11 @@ export interface Tank {
 }
 
 export interface TemperatureHistory {
+  tankId: string;
+  tankName: string;
   history: Array<{
-    timestamp: string;
     temperature: number;
-    tankId: string;
+    timestamp: string;
   }>;
 }
 
@@ -96,11 +97,13 @@ export const updateSystemStatus = async (updates: Partial<SystemStatus>): Promis
 // Temperature History
 export const getTemperatureHistory = async (tankId: string, startDate?: string, endDate?: string): Promise<TemperatureHistory> => {
   try {
+    console.log(`Fetching temperature history for tank ${tankId}`);
     let url = `/tanks/${tankId}/temperature-history`;
     if (startDate && endDate) {
       url += `?start=${startDate}&end=${endDate}`;
     }
     const response = await api.get(url);
+    console.log('Temperature history response:', response.data);
     return response.data;
   } catch (error) {
     const axiosError = error as AxiosError;
@@ -108,7 +111,7 @@ export const getTemperatureHistory = async (tankId: string, startDate?: string, 
     if (axiosError.response) {
       console.error('Error response:', axiosError.response.data);
     }
-    throw error;
+    throw new Error(axiosError.response?.data?.error || axiosError.message);
   }
 };
 
