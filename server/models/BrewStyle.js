@@ -1,11 +1,10 @@
 const mongoose = require('mongoose');
 
-const beerStyleSchema = new mongoose.Schema({
+const brewStyleSchema = new mongoose.Schema({
   name: {
     type: String,
     required: true,
-    unique: true,
-    trim: true
+    unique: true
   },
   minTemp: {
     type: Number,
@@ -15,6 +14,8 @@ const beerStyleSchema = new mongoose.Schema({
     type: Number,
     required: true
   }
-}, { timestamps: true });
+}, {
+  timestamps: true
+});
 
-module.exports = mongoose.model('BeerStyle', beerStyleSchema);
+module.exports = mongoose.model('BrewStyle', brewStyleSchema);

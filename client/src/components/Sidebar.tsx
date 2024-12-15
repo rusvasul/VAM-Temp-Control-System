@@ -8,6 +8,7 @@ import {
   Bell,
   Shield,
   Beer,
+  Calendar,
 } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 
@@ -23,6 +24,12 @@ const getRoutes = (isAdmin: boolean) => [
     icon: ThermometerIcon,
     href: "/monitoring",
     color: "text-violet-500",
+  },
+  {
+    label: "Schedules",
+    icon: Calendar,
+    href: "/schedules",
+    color: "text-indigo-500",
   },
   {
     label: "History",
@@ -43,9 +50,9 @@ const getRoutes = (isAdmin: boolean) => [
     color: "text-emerald-500",
   },
   {
-    label: "Beer Styles",
+    label: "Brew Styles",
     icon: Beer,
-    href: "/beer-styles",
+    href: "/brew-styles",
     color: "text-amber-500",
   },
   ...(isAdmin ? [{

@@ -11,12 +11,16 @@ const SSE = require('express-sse');
 const sse = new SSE();
 const AlarmMonitor = require('./services/alarmMonitor');
 const { authenticateWithToken, requireUser, requireAdmin } = require('./routes/middleware/auth');
+const mongoose = require('mongoose');
+const path = require('path');
+const jwt = require('jsonwebtoken');
 
 // Models
 require('./models/TemperatureHistory');
 require('./models/Alarm');
 require('./models/Settings');
 require('./models/CleaningSchedule');
+const SystemStatus = require('./models/SystemStatus');
 
 // Routes
 const basicRoutes = require('./routes/index');
@@ -25,7 +29,7 @@ const tankRoutes = require('./routes/tanks');
 const systemStatusRoutes = require('./routes/systemStatus');
 const alarmRoutes = require('./routes/alarms');
 const settingsRoutes = require('./routes/settings');
-const beerStyleRoutes = require('./routes/beerStyles');
+const brewStyleRoutes = require('./routes/brewStyles');
 const cleaningScheduleRoutes = require('./routes/cleaningSchedules');
 const productionScheduleRoutes = require('./routes/productionSchedules');
 
@@ -42,7 +46,8 @@ app.use(cors({
   origin: ['http://localhost:5173', 'http://localhost:5174'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['Content-Type', 'Authorization']
 }));
 
 // Middleware for parsing JSON and form data
@@ -74,8 +79,73 @@ const initializeServer = async () => {
     );
 
     // SSE endpoints
-    app.get('/sse', sse.init);
-    app.get('/events', sse.init);
+    app.get('/api/sse', async (req, res) => {
+      debug('SSE connection request received');
+      
+      // Get token from Authorization header or query parameter
+      const authHeader = req.headers.authorization;
+      const token = authHeader ? authHeader.split(' ')[1] : req.query.token;
+
+      if (!token) {
+        debug('No token provided for SSE connection');
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      try {
+        const decoded = jwt.verify(token, process.env.SESSION_SECRET);
+        debug('Token verified successfully:', decoded);
+
+        // Verify user exists
+        const user = await mongoose.model('User').findById(decoded.userId);
+        if (!user) {
+          debug('User not found for token');
+          return res.status(401).json({ error: 'User not found' });
+        }
+
+        // Set up SSE connection with CORS headers
+        res.writeHead(200, {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+          'Access-Control-Allow-Origin': req.headers.origin || '*',
+          'Access-Control-Allow-Credentials': 'true'
+        });
+
+        // Send initial heartbeat
+        res.write('event: connected\ndata: connected\n\n');
+
+        const sendSystemStatus = async () => {
+          try {
+            const systemStatus = await SystemStatus.findOne();
+            if (systemStatus) {
+              const data = JSON.stringify(systemStatus);
+              debug('Sending system status update:', data);
+              res.write(`data: ${data}\n\n`);
+            }
+          } catch (error) {
+            debug('Error sending system status:', error);
+            // Don't end the connection on error, just log it
+          }
+        };
+
+        // Send initial status
+        await sendSystemStatus();
+
+        // Send updates every 5 seconds
+        const intervalId = setInterval(sendSystemStatus, 5000);
+
+        // Clean up on client disconnect
+        req.on('close', () => {
+          debug('SSE connection closed');
+          clearInterval(intervalId);
+        });
+
+      } catch (error) {
+        debug('Token verification failed:', error);
+        return res.status(401).json({ error: 'Invalid token' });
+      }
+    });
+
     debug('SSE endpoints initialized');
 
     // Public routes
@@ -97,11 +167,11 @@ const initializeServer = async () => {
     app.use('/api/system-status', requireUser, systemStatusRoutes);
     app.use('/api/alarms', requireUser, alarmRoutes);
     app.use('/api/settings', requireUser, settingsRoutes);
-    app.use('/api/beer-styles', requireUser, beerStyleRoutes);
+    app.use('/api/brew-styles', requireUser, brewStyleRoutes);
     app.use('/api/cleaning-schedules', cleaningScheduleRoutes);
     app.use('/api/production-schedules', productionScheduleRoutes);
     debug('Protected routes mounted');
-    debug('Beer styles routes registered');
+    debug('Brew styles routes registered');
     debug('Cleaning schedules routes mounted');
 
     // Log all registered routes with authentication info

@@ -1,4 +1,5 @@
 import api from './api';
+import { AxiosError } from 'axios';
 
 export interface CleaningSchedule {
   _id: string;
@@ -14,69 +15,69 @@ export interface CleaningSchedule {
 export type CreateCleaningScheduleDto = Omit<CleaningSchedule, '_id' | 'nextCleaning' | 'createdAt' | 'updatedAt'>;
 export type UpdateCleaningScheduleDto = Partial<CreateCleaningScheduleDto>;
 
-const getCleaningSchedules = async (): Promise<CleaningSchedule[]> => {
+class ApiError extends Error {
+  constructor(message: string, public statusCode?: number) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
+const handleApiError = (error: unknown) => {
+  if (error instanceof AxiosError) {
+    throw new ApiError(
+      error.response?.data?.error || error.message,
+      error.response?.status
+    );
+  }
+  throw error;
+};
+
+export const getCleaningSchedules = async (): Promise<CleaningSchedule[]> => {
   try {
-    const response = await api.get('/cleaning-schedules');
-    console.log('Cleaning schedules fetched:', response.data);
+    const response = await api.get<CleaningSchedule[]>('/cleaning-schedules');
     return response.data;
   } catch (error) {
-    console.error('Error fetching cleaning schedules:', error);
-    throw error;
+    handleApiError(error);
   }
 };
 
-const getCleaningScheduleForTank = async (tankId: string): Promise<CleaningSchedule | null> => {
-  console.log(`Fetching cleaning schedule for tank ${tankId}`);
+export const getCleaningScheduleForTank = async (tankId: string): Promise<CleaningSchedule | null> => {
   try {
-    const response = await api.get(`/cleaning-schedules/tank/${tankId}`);
-    console.log('Tank cleaning schedule response:', response.data);
+    const response = await api.get<CleaningSchedule>(`/cleaning-schedules/tank/${tankId}`);
     return response.data;
   } catch (error) {
-    if ((error as any)?.response?.status === 404) {
-      console.log(`No cleaning schedule found for tank ${tankId}`);
+    if (error instanceof AxiosError && error.response?.status === 404) {
       return null;
     }
-    console.error('Error fetching tank cleaning schedule:', error);
-    throw error;
+    handleApiError(error);
   }
 };
 
-const createCleaningSchedule = async (schedule: CreateCleaningScheduleDto): Promise<CleaningSchedule> => {
+export const createCleaningSchedule = async (schedule: CreateCleaningScheduleDto): Promise<CleaningSchedule> => {
   try {
-    const response = await api.post('/cleaning-schedules', schedule);
-    console.log('Cleaning schedule created:', response.data);
+    const response = await api.post<CleaningSchedule>('/cleaning-schedules', schedule);
     return response.data;
   } catch (error) {
-    console.error('Error creating cleaning schedule:', error);
-    throw error;
+    handleApiError(error);
   }
 };
 
-const updateCleaningSchedule = async (id: string, schedule: UpdateCleaningScheduleDto): Promise<CleaningSchedule> => {
+export const updateCleaningSchedule = async (
+  id: string,
+  schedule: UpdateCleaningScheduleDto
+): Promise<CleaningSchedule> => {
   try {
-    const response = await api.put(`/cleaning-schedules/${id}`, schedule);
-    console.log('Cleaning schedule updated:', response.data);
+    const response = await api.put<CleaningSchedule>(`/cleaning-schedules/${id}`, schedule);
     return response.data;
   } catch (error) {
-    console.error('Error updating cleaning schedule:', error);
-    throw error;
+    handleApiError(error);
   }
 };
 
-const deleteCleaningSchedule = async (id: string): Promise<void> => {
+export const deleteCleaningSchedule = async (id: string): Promise<void> => {
   try {
     await api.delete(`/cleaning-schedules/${id}`);
-    console.log('Cleaning schedule deleted successfully');
   } catch (error) {
-    console.error('Error deleting cleaning schedule:', error);
-    throw error;
+    handleApiError(error);
   }
-};
-
-export {
-  getCleaningSchedules,
-  getCleaningScheduleForTank,
-  createCleaningSchedule,
-  updateCleaningSchedule,
-  deleteCleaningSchedule
 };

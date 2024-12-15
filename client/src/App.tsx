@@ -17,7 +17,8 @@ import { ProtectedRoute } from "./components/ProtectedRoute"
 import { Sidebar } from "./components/Sidebar"
 import { Header } from "./components/Header"
 import { useEffect } from "react"
-import { BeerStyles } from "./pages/BeerStyles"
+import { BrewStyles } from "./pages/BrewStyles"
+import { Schedules } from "./pages/Schedules"
 
 function App() {
   console.log("App component rendering");
@@ -58,11 +59,12 @@ function App() {
                 >
                   <Route index element={<Dashboard />} />
                   <Route path="monitoring" element={<Monitoring />} />
+                  <Route path="schedules" element={<Schedules />} />
                   <Route path="history" element={<History />} />
                   <Route path="alarms" element={<Alarms />} />
                   <Route path="settings" element={<Settings />} />
                   <Route path="admin" element={<Admin />} />
-                  <Route path="beer-styles" element={<BeerStyles />} />
+                  <Route path="brew-styles" element={<BrewStyles />} />
                 </Route>
               </Routes>
               <Toaster />

@@ -1,27 +1,28 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { getBrewStyles } from "@/api/brewStyles"
+import { BrewStyleTable } from "@/components/BrewStyleTable"
+import { BrewStyleDialog } from "@/components/BrewStyleDialog"
 import { Plus } from "lucide-react"
-import { getBeerStyles } from "@/api/beerStyles"
-import { BeerStyleTable } from "@/components/BeerStyleTable"
-import { BeerStyleDialog } from "@/components/BeerStyleDialog"
+import type { BrewStyle } from "@/api/brewStyles"
 import { useToast } from "@/hooks/useToast"
-import type { BeerStyle } from "@/api/beerStyles"
 
-export function BeerStyles() {
-  const [styles, setStyles] = useState<BeerStyle[]>([])
+export function BrewStyles() {
+  const [styles, setStyles] = useState<BrewStyle[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const { toast } = useToast()
 
-  const fetchBeerStyles = async () => {
+  const fetchBrewStyles = async () => {
     try {
-      const data = await getBeerStyles()
+      setIsLoading(true)
+      const data = await getBrewStyles()
       setStyles(data)
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to fetch beer styles",
+        description: "Failed to fetch brew styles",
         variant: "destructive",
       })
     } finally {
@@ -30,13 +31,13 @@ export function BeerStyles() {
   }
 
   useEffect(() => {
-    fetchBeerStyles()
+    fetchBrewStyles()
   }, [])
 
   return (
-    <div className="space-y-4 p-8 pt-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-bold tracking-tight">Beer Styles</h2>
+    <div className="container mx-auto p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-3xl font-bold tracking-tight">Brew Styles</h2>
         <Button onClick={() => setIsDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
           Add Style
@@ -45,21 +46,21 @@ export function BeerStyles() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Manage Beer Styles</CardTitle>
+          <CardTitle>Manage Brew Styles</CardTitle>
         </CardHeader>
         <CardContent>
-          <BeerStyleTable 
-            styles={styles} 
+          <BrewStyleTable
+            styles={styles}
             isLoading={isLoading}
-            onUpdate={fetchBeerStyles}
+            onUpdate={fetchBrewStyles}
           />
         </CardContent>
       </Card>
 
-      <BeerStyleDialog
+      <BrewStyleDialog
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
-        onSuccess={fetchBeerStyles}
+        onSuccess={fetchBrewStyles}
       />
     </div>
   )
