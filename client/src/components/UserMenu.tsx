@@ -12,9 +12,10 @@ import { useAuth } from "@/contexts/AuthContext"
 import { useNavigate } from "react-router-dom"
 import { User, Settings, LogOut } from "lucide-react"
 import { useToast } from "@/hooks/useToast"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 
 export function UserMenu() {
-  const { logout, isAdmin } = useAuth()
+  const { logout, isAdmin, user } = useAuth()
   const navigate = useNavigate()
   const { toast } = useToast()
 
@@ -32,20 +33,44 @@ export function UserMenu() {
     }
   }
 
+  const getInitials = () => {
+    if (user?.firstName && user?.lastName) {
+      return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
+    }
+    return user?.email?.[0]?.toUpperCase() || 'U';
+  };
+
+  const getDisplayName = () => {
+    if (user?.firstName && user?.lastName) {
+      return `${user.firstName} ${user.lastName}`;
+    }
+    return user?.email || 'User';
+  };
+
+  const getRole = () => {
+    if (isAdmin) return 'Administrator';
+    if (user?.position) return user.position;
+    return 'User';
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-          <User className="h-5 w-5" />
+          <Avatar>
+            <AvatarFallback>{getInitials()}</AvatarFallback>
+          </Avatar>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">user@example.com</p>
-            <p className="text-xs leading-none text-muted-foreground">
-              {isAdmin ? 'Administrator' : 'User'}
-            </p>
+            <p className="text-sm font-medium leading-none">{getDisplayName()}</p>
+            <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
+            <p className="text-xs leading-none text-muted-foreground">{getRole()}</p>
+            {user?.department && (
+              <p className="text-xs leading-none text-muted-foreground">{user.department}</p>
+            )}
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />

@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../../models/User');
+const config = require('../../config');
 const debug = require('debug')('app:auth');
 
 const authenticateWithToken = async (req, res, next) => {
@@ -17,7 +18,7 @@ const authenticateWithToken = async (req, res, next) => {
     }
 
     try {
-      const decoded = jwt.verify(token, process.env.SESSION_SECRET);
+      const decoded = jwt.verify(token, config.jwtSecret);
       const user = await User.findById(decoded.userId);
       if (!user) {
         debug('User not found for token');

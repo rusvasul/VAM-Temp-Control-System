@@ -12,8 +12,6 @@ const connectDB = async (retries = 5) => {
     debug(`Attempting to connect to database: ${DATABASE_URL}`);
     await mongoose.connect(DATABASE_URL, {
       family: 4,
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
       serverSelectionTimeoutMS: 5000,
       heartbeatFrequencyMS: 2000,
       socketTimeoutMS: 45000,

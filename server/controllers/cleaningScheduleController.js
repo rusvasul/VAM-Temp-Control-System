@@ -1,6 +1,7 @@
 const CleaningSchedule = require('../models/CleaningSchedule');
 const Tank = require('../models/Tank');
 const debug = require('debug')('app:controllers:cleaningSchedules');
+const { cleaningScheduleValidationSchema } = require('../models/CleaningSchedule');
 
 const calculateNextCleaning = (lastCleaning, schedule) => {
   const date = new Date(lastCleaning);
@@ -28,6 +29,13 @@ exports.createSchedule = async (req, res) => {
   try {
     const { tankId, type, schedule, lastCleaning } = req.body;
     debug('Request body:', req.body);
+
+    // Validate request body
+    const { error } = cleaningScheduleValidationSchema.validate(req.body);
+    if (error) {
+      debug('Validation error:', error.details);
+      return res.status(400).json({ error: error.details[0].message });
+    }
 
     // Verify tank exists
     const tank = await Tank.findById(tankId);

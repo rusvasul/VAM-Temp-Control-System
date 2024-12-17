@@ -1,147 +1,248 @@
-```markdown
-# Vam Tank Control
+# VAM Tank Control System
 
-Vam Tank Control is a comprehensive system designed for managing and monitoring fermentation tanks in a brewing environment. The system provides real-time temperature control, historical data logging, and a web interface for remote access and management. It integrates various components such as fermentation tanks, a central chiller and heating system, solenoid valves, and a database for data storage.
+A web-based monitoring and control system for brewery tank management.
 
-## Overview
+## Supported Operating Systems
 
-### System Architecture Requirements
+This application can be deployed on:
+- Windows 10/11
+- macOS 10.15 (Catalina) or later
+- Linux (Ubuntu 20.04 LTS or later recommended)
 
-**Core Components**
-- 9 fermentation tanks with individual temperature monitoring
-- 1 central chiller system
-- 1 central heating system
-- Common header distribution system
-- Individual solenoid valves for each tank
-- Hot/cold interlock safety system
-- Database for historical data
-- Web interface for monitoring and control
+## Prerequisites
 
-### Control System Requirements
+Before you begin, ensure you have the following installed on your system:
 
-**Temperature Control**
-- All tanks must operate in the same mode (either heating or cooling)
-- Each tank requires individual temperature monitoring and control
-- Automated solenoid valve control for each tank
-- Safety interlock to prevent simultaneous heating and cooling operation
+1. **Node.js** (version 16 or higher)
+   - Windows: Download installer from https://nodejs.org/
+   - macOS: Use Homebrew: `brew install node`
+   - Linux: Use apt: `sudo apt install nodejs npm`
+   - To verify installation, open a terminal/command prompt and run:
+     ```bash
+     node --version
+     ```
 
-**Automation Features**
-- Real-time temperature monitoring and logging
-- Remote access capability for monitoring and control
-- Automated alarm notifications for temperature deviations
-- Recipe management and process parameter storage
+2. **MongoDB** (version 4.4 or higher)
+   - Windows: 
+     - Download MSI installer from https://www.mongodb.com/try/download/community
+     - Install as a service when prompted
+   - macOS:
+     - Use Homebrew: `brew tap mongodb/brew && brew install mongodb-community`
+     - Start service: `brew services start mongodb-community`
+   - Linux:
+     ```bash
+     sudo apt update
+     sudo apt install mongodb
+     sudo systemctl start mongodb
+     ```
+   - To verify installation, open a terminal/command prompt and run:
+     ```bash
+     mongod --version
+     ```
 
-### Database Requirements
+3. **Git** (for cloning the repository)
+   - Windows: Download from https://git-scm.com/download/win
+   - macOS: Included with Xcode Command Line Tools or `brew install git`
+   - Linux: `sudo apt install git`
 
-**Data Collection**
-- Temperature readings from all tanks
-- Equipment status (valves, heater, chiller)
-- Alarm history
-- Recipe and batch information
-- System events and operator actions
+## Installation Steps
 
-**Data Management**
-- Centralized database structure
-- Regular data backup procedures
-- Data retention policies
-- Performance trending capabilities
+### 1. Clone the Repository
 
-### Web Interface Requirements
-
-**User Interface Features**
-- Real-time system overview dashboard
-- Individual tank control and monitoring
-- Temperature trending displays
-- Equipment status visualization
-- Alarm management interface
-- Mobile-responsive design
-
-**Security Requirements**
-- User authentication and authorization
-- Role-based access control
-- Secure communication protocols
-- Audit trail of user actions
-
-### Implementation Recommendations
-
-**Control Platform Options**
-- Industrial PLC with HMI system
-- Ignition SCADA platform (maker edition for cost-effectiveness)
-- Web-based control system using modern frameworks
-- Integration with standard industrial protocols (Modbus, MQTT)
-
-**Development Considerations**
-- Implement proper data validation and error handling
-- Design for scalability and future expansion
-- Include comprehensive system documentation
-- Provide operator training materials
-- Regular system backup procedures
-
-### Project Structure
-
-The project is divided into two main parts:
-
-**1. Frontend**
-- Located in the `client/` folder
-- Uses Vite and React
-- Runs on port 5173 for user testing
-
-**2. Backend**
-- Located in the `server/` folder
-- Uses Express
-- Runs on port 3000
-
-Concurrently is used to run both client and server together with a single command (`npm run start`).
-
-## Features
-
-- **Real-time Monitoring:** Monitor the temperature and status of each fermentation tank in real-time.
-- **Remote Control:** Access and control the system remotely via a web interface.
-- **Automated Alarms:** Receive notifications for any deviations in temperature or system errors.
-- **Historical Data Logging:** Log and review historical data for temperature, system events, and operator actions.
-- **Recipe Management:** Store and manage brewing recipes and process parameters.
-- **Role-based Access Control:** Secure access with user authentication and authorization.
-- **Mobile-responsive Design:** Access the system on various devices with a responsive web interface.
-
-## Getting Started
-
-### Requirements
-
-- Node.js (>=14.x)
-- npm (>=6.x)
-- MongoDB
-
-### Quickstart
-
-1. **Clone the repository:**
+1. Open a terminal/command prompt
+   - Windows: Use PowerShell or Command Prompt
+   - macOS/Linux: Use Terminal
+2. Navigate to where you want to install the application
+3. Run the following commands:
    ```bash
-   git clone https://github.com/yourusername/vam-tank-control.git
+   git clone [repository-url]
    cd vam-tank-control
    ```
 
-2. **Install dependencies:**
+### 2. Set Up the Server
+
+1. Navigate to the server directory:
+   ```bash
+   cd server
+   ```
+
+2. Install server dependencies:
    ```bash
    npm install
-   cd client && npm install
-   cd ../server && npm install
    ```
 
-3. **Set up environment variables:**
-   Create a `.env` file in the `server/` folder with the following content:
-   ```env
-   PORT=3000
-   DATABASE_URL=mongodb://localhost:27017/vamtankcontrol
-   SESSION_SECRET=your_secret_key
-   ```
+3. Create a `.env` file in the server directory:
+   - Windows (PowerShell):
+     ```powershell
+     New-Item .env -Type File
+     Add-Content .env "PORT=3001`nDATABASE_URL=mongodb://localhost:27017/vam-tank-control`nSESSION_SECRET=your-secret-key-here`nNODE_ENV=development"
+     ```
+   - macOS/Linux:
+     ```bash
+     echo "PORT=3001
+     DATABASE_URL=mongodb://localhost:27017/vam-tank-control
+     SESSION_SECRET=your-secret-key-here
+     NODE_ENV=development" > .env
+     ```
+   Replace `your-secret-key-here` with a random string of characters
 
-4. **Run the application:**
+### 3. Set Up the Client
+
+1. Open a new terminal/command prompt
+2. Navigate to the client directory:
    ```bash
-   npm run start
+   cd client
    ```
 
-   The frontend will be accessible at `http://localhost:5173` and the backend at `http://localhost:3000`.
+3. Install client dependencies:
+   ```bash
+   npm install
+   ```
 
-### License
+4. Create a `.env` file in the client directory:
+   - Windows (PowerShell):
+     ```powershell
+     New-Item .env -Type File
+     Add-Content .env "VITE_API_URL=http://localhost:3001"
+     ```
+   - macOS/Linux:
+     ```bash
+     echo "VITE_API_URL=http://localhost:3001" > .env
+     ```
 
-The project is proprietary (not open source), just output the standard Copyright (c) 2024.
-```
+## Running the Application
+
+### 1. Start MongoDB
+
+1. Open a terminal/command prompt
+2. Start MongoDB:
+   - Windows:
+     - MongoDB should be running as a service
+     - To check status: `Get-Service MongoDB`
+     - To start manually: `"C:\Program Files\MongoDB\Server\4.4\bin\mongod.exe"`
+   - macOS:
+     ```bash
+     brew services start mongodb-community
+     ```
+   - Linux:
+     ```bash
+     sudo systemctl start mongodb
+     ```
+
+### 2. Start the Server
+
+1. Open a terminal/command prompt
+2. Navigate to the server directory
+3. Run:
+   ```bash
+   npm run dev
+   ```
+4. You should see: "Server is listening on port 3001"
+
+### 3. Start the Client
+
+1. Open another terminal/command prompt
+2. Navigate to the client directory
+3. Run:
+   ```bash
+   npm run dev
+   ```
+4. You should see a URL like: `http://localhost:5173`
+
+### 4. Access the Application
+
+1. Open your web browser (Chrome or Firefox recommended)
+2. Go to: `http://localhost:5173`
+3. You should see the login page
+
+## Initial Setup
+
+### Create First Admin User
+
+1. Access the application in your browser
+2. Click "Register"
+3. Fill in the registration form:
+   - Email: [your-email]
+   - Password: [your-password]
+4. Log in with your credentials
+
+## Common Issues and Solutions
+
+### MongoDB Connection Issues
+
+If you see "Failed to connect to database":
+1. Verify MongoDB is running
+2. Check your DATABASE_URL in `.env`
+3. Ensure MongoDB is installed correctly
+
+### Server Won't Start
+
+If you see "Port already in use":
+1. Check if another application is using port 3001
+2. Change the PORT in server `.env` file
+3. Update client `.env` VITE_API_URL to match
+
+### Client Can't Connect to Server
+
+If you see "Failed to fetch" errors:
+1. Verify the server is running
+2. Check VITE_API_URL in client `.env`
+3. Ensure both client and server ports match your configuration
+
+## Monitoring and Maintenance
+
+### Logs
+
+- Server logs are in the terminal running the server
+- Client logs are in the browser's developer tools (F12 > Console)
+
+### Updating
+
+To update the application:
+1. Stop both client and server (Ctrl+C in terminals)
+2. Pull latest changes:
+   ```bash
+   git pull
+   ```
+3. Install any new dependencies:
+   ```bash
+   cd server && npm install
+   cd ../client && npm install
+   ```
+4. Restart both client and server
+
+## Security Considerations
+
+1. Change the SESSION_SECRET in production
+2. Use HTTPS in production
+3. Regularly update dependencies:
+   ```bash
+   npm audit
+   npm audit fix
+   ```
+
+## Production Deployment
+
+For production deployment, additional steps are required:
+
+1. Set NODE_ENV=production in server `.env`
+2. Use a process manager like PM2:
+   ```bash
+   npm install -g pm2
+   pm2 start server/index.js
+   ```
+3. Set up NGINX or Apache as a reverse proxy
+4. Configure SSL/TLS certificates
+5. Set up proper MongoDB authentication
+6. Configure regular backups
+
+## Support
+
+For additional help:
+1. Check the logs in both terminals
+2. Review the documentation
+3. Contact system administrator
+
+## License
+
+[Your License Information Here]

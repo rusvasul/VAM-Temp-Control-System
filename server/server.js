@@ -29,7 +29,7 @@ const tankRoutes = require('./routes/tanks');
 const systemStatusRoutes = require('./routes/systemStatus');
 const alarmRoutes = require('./routes/alarms');
 const settingsRoutes = require('./routes/settings');
-const brewStyleRoutes = require('./routes/brewStyles');
+const brewStyleRoutes = require('./routes/brewStyleRoutes');
 const cleaningScheduleRoutes = require('./routes/cleaningSchedules');
 const productionScheduleRoutes = require('./routes/productionSchedules');
 
@@ -219,6 +219,9 @@ const initializeServer = async () => {
         path: req.originalUrl
       });
     });
+
+    // Add static file serving for recipe documents
+    app.use('/uploads/recipes', express.static(path.join(__dirname, 'uploads/recipes')));
 
     // Start server
     const server = app.listen(port, () => {

@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const debug = require('debug')('app:models:cleaningSchedule');
+const Joi = require('joi');
 
 const cleaningScheduleSchema = new mongoose.Schema({
   tankId: {
@@ -75,5 +76,33 @@ cleaningScheduleSchema.pre('save', function(next) {
 cleaningScheduleSchema.path('lastCleaning').validate(function(value) {
   return value <= new Date();
 }, 'Last cleaning date cannot be in the future');
+
+// Joi validation schema for CleaningSchedule
+const cleaningScheduleValidationSchema = Joi.object({
+  tankId: Joi.string().required().messages({
+    'any.required': 'Tank ID is required'
+  }),
+  type: Joi.string().valid('recurring', 'single').required().messages({
+    'any.required': 'Schedule type is required',
+    'any.only': '{#value} is not a valid schedule type'
+  }),
+  schedule: Joi.string().valid('Daily', 'Weekly', 'Bi-weekly', 'Monthly').when('type', {
+    is: 'recurring',
+    then: Joi.required().messages({
+      'any.required': 'Schedule frequency is required for recurring schedules',
+      'any.only': '{#value} is not a valid schedule frequency'
+    })
+  }),
+  lastCleaning: Joi.date().max('now').required().messages({
+    'any.required': 'Last cleaning date is required',
+    'date.max': 'Last cleaning date cannot be in the future'
+  }),
+  nextCleaning: Joi.date().required().messages({
+    'any.required': 'Next cleaning date is required'
+  })
+});
+
+// Export the validation schema
+module.exports.cleaningScheduleValidationSchema = cleaningScheduleValidationSchema;
 
 module.exports = mongoose.model('CleaningSchedule', cleaningScheduleSchema);
