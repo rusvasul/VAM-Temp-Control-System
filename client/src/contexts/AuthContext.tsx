@@ -51,7 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
-      const response = await apiLogin(email, password);
+      const response = await apiLogin({ email, password });
       if (response.token) {
         localStorage.setItem("token", response.token);
         localStorage.setItem("isAdmin", String(response.isAdmin || false));

@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const UserService = require('../services/user');
-const { authenticateToken, isAdmin } = require('../middleware/auth');
+const { authenticateToken, requireAdmin } = require('../middleware/auth');
 const debug = require('debug')('app:routes:users');
 
 // Get current user's profile
@@ -65,7 +65,7 @@ router.post('/reset-password', async (req, res) => {
 });
 
 // Admin routes
-router.use(isAdmin); // All routes below this line require admin privileges
+router.use(requireAdmin); // All routes below this line require admin privileges
 
 // List all users
 router.get('/', async (req, res) => {

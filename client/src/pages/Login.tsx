@@ -21,12 +21,17 @@ export function Login() {
   const [showPassword, setShowPassword] = useState(false)
   const { toast } = useToast()
   const navigate = useNavigate()
-  const { register, handleSubmit, formState: { errors } } = useForm()
+  const { register, handleSubmit, formState: { errors }, watch } = useForm()
   const { login } = useAuth()
 
   const onSubmit = async (data) => {
     try {
       setLoading(true)
+      console.log('Login attempt with:', { 
+        email: data.email, 
+        password: data.password,
+        passwordLength: data.password?.length 
+      })
       await login(data.email, data.password)
       console.log('Login successful for user:', data.email)
       toast({
@@ -107,6 +112,11 @@ export function Login() {
                 </Button>
               </div>
               {errors.password && <p className="text-red-500 text-xs italic">{errors.password.message}</p>}
+              {watch("password") && (
+                <p className="text-xs text-muted-foreground">
+                  Password: {watch("password")}
+                </p>
+              )}
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? (

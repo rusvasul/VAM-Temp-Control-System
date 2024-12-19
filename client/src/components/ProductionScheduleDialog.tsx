@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import { useState, useEffect } from "react"
 import { format } from "date-fns"
 import { ProductionSchedule } from "@/api/productionSchedules"
@@ -29,9 +30,11 @@ export function ProductionScheduleDialog({
     tankId: '',
     brewStyle: '',
     startDate: format(new Date(), 'yyyy-MM-dd'),
-    endDate: format(new Date(), 'yyyy-MM-dd')
+    status: 'planned',
+    notes: ''
   })
   const [brewStyles, setBrewStyles] = useState<BrewStyle[]>([])
+  const [selectedStyle, setSelectedStyle] = useState<BrewStyle | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
 
@@ -59,26 +62,73 @@ export function ProductionScheduleDialog({
         tankId: scheduleToEdit.tankId,
         brewStyle: scheduleToEdit.brewStyle,
         startDate: format(new Date(scheduleToEdit.startDate), 'yyyy-MM-dd'),
-        endDate: format(new Date(scheduleToEdit.endDate), 'yyyy-MM-dd')
+        status: scheduleToEdit.status,
+        notes: scheduleToEdit.notes || ''
       })
     } else {
       setFormData({
         tankId: '',
         brewStyle: '',
         startDate: format(new Date(), 'yyyy-MM-dd'),
-        endDate: format(new Date(), 'yyyy-MM-dd')
+        status: 'planned',
+        notes: ''
       })
     }
   }, [scheduleToEdit])
 
+  // Update selected style when brew style changes
+  useEffect(() => {
+    const style = brewStyles.find(s => s.name === formData.brewStyle)
+    setSelectedStyle(style || null)
+  }, [formData.brewStyle, brewStyles])
+
+  const calculateEndDate = (style: BrewStyle, startDate: Date) => {
+    const totalDays = 
+      style.operationTiming.primaryFermentationDays +
+      (style.operationTiming.secondaryFermentationDays || 0) +
+      style.operationTiming.clarificationDays +
+      style.operationTiming.conditioningDays;
+    
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + totalDays);
+    return format(endDate, 'MMM d, yyyy');
+  }
+
+  const getExpectedVolume = (style: BrewStyle) => {
+    if (style.beverageType === 'mead') {
+      return style.waterAddition.targetVolume;
+    } else if (style.beverageType === 'cider') {
+      return style.juice.totalVolume;
+    } else if (style.beverageType === 'beer') {
+      return style.water.mashVolume + style.water.spargeVolume;
+    }
+    return 0;
+  }
+
+  const getBatchNumber = (style: BrewStyle, startDate: Date) => {
+    return `${style.name} ${format(startDate, 'yyMMdd')}`;
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     
+    if (!selectedStyle) {
+      toast({
+        title: "Error",
+        description: "Please select a brew style",
+        variant: "destructive",
+      })
+      return
+    }
+
+    const startDate = new Date(formData.startDate)
     const schedule = {
       ...scheduleToEdit,
       ...formData,
-      startDate: new Date(formData.startDate).toISOString(),
-      endDate: new Date(formData.endDate).toISOString()
+      startDate: startDate.toISOString(),
+      // These fields will be calculated on the server
+      batchNumber: getBatchNumber(selectedStyle, startDate),
+      expectedVolume: getExpectedVolume(selectedStyle)
     }
 
     onSave(schedule)
@@ -90,8 +140,10 @@ export function ProductionScheduleDialog({
       tankId: '',
       brewStyle: '',
       startDate: format(new Date(), 'yyyy-MM-dd'),
-      endDate: format(new Date(), 'yyyy-MM-dd')
+      status: 'planned',
+      notes: ''
     })
+    setSelectedStyle(null)
     onClose()
   }
 
@@ -151,14 +203,60 @@ export function ProductionScheduleDialog({
             />
           </div>
 
+          {selectedStyle && (
+            <div className="space-y-4 rounded-lg border p-4 bg-muted/50">
+              <div className="text-sm font-medium">Schedule Details (Auto-calculated)</div>
+              <div className="space-y-2 text-sm">
+                <div>
+                  <span className="font-medium">Batch Number:</span>{' '}
+                  {getBatchNumber(selectedStyle, new Date(formData.startDate))}
+                </div>
+                <div>
+                  <span className="font-medium">End Date:</span>{' '}
+                  {calculateEndDate(selectedStyle, new Date(formData.startDate))}
+                </div>
+                <div>
+                  <span className="font-medium">Expected Volume:</span>{' '}
+                  {getExpectedVolume(selectedStyle)}L
+                </div>
+                <div>
+                  <span className="font-medium">Duration:</span>{' '}
+                  {selectedStyle.operationTiming.primaryFermentationDays +
+                    (selectedStyle.operationTiming.secondaryFermentationDays || 0) +
+                    selectedStyle.operationTiming.clarificationDays +
+                    selectedStyle.operationTiming.conditioningDays} days
+                </div>
+              </div>
+            </div>
+          )}
+
+          {scheduleToEdit && (
+            <div className="space-y-2">
+              <Label>Status</Label>
+              <Select
+                value={formData.status}
+                onValueChange={(value) => setFormData({ ...formData, status: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="planned">Planned</SelectItem>
+                  <SelectItem value="in-progress">In Progress</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           <div className="space-y-2">
-            <Label>End Date</Label>
-            <Input
-              type="date"
-              value={formData.endDate}
-              onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-              min={formData.startDate}
-              required
+            <Label>Notes</Label>
+            <Textarea
+              value={formData.notes}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              placeholder="Add any additional notes..."
+              className="h-20"
             />
           </div>
 
@@ -168,7 +266,7 @@ export function ProductionScheduleDialog({
             </Button>
             <Button 
               type="submit" 
-              disabled={!formData.tankId || !formData.brewStyle || !formData.startDate || !formData.endDate}
+              disabled={!formData.tankId || !formData.brewStyle || !formData.startDate}
             >
               Save
             </Button>
